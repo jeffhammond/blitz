@@ -332,17 +332,18 @@ public:
   using T_base::numArrayOperands;
   using T_base::numIndexPlaceholders;
 
-    // NB: this ctor does NOT preserve stack and stride
-    // parameters.  This is for speed purposes.
-    FastArrayIterator(const FastArrayIterator<P_numtype, N_rank>& x) 
-      : T_base(x)
-    { }
-
-    void operator=(const FastArrayIterator<P_numtype, N_rank>& x)
-    {
-      T_base::operator=(x);
-    }
-
+  // NB: this ctor does NOT preserve stack and stride
+  // parameters.  This is for speed purposes.
+  FastArrayIterator(const FastArrayIterator<P_numtype, N_rank>& x) 
+    : T_base(x)
+  { }
+  
+  using T_base::operator=;
+  void operator=(const FastArrayIterator<P_numtype, N_rank>& x)
+  {
+    T_base::operator=(x);
+  }
+  
   using T_base::operator();
 
   T_range_result operator()(Range r0)
@@ -380,17 +381,18 @@ public:
   using T_base::numIndexPlaceholders;
 
 
-    // NB: this ctor does NOT preserve stack and stride
-    // parameters.  This is for speed purposes.
-    FastArrayCopyIterator(const FastArrayCopyIterator<P_numtype, N_rank>& x) 
-      : T_base(x)
-    { }
-
-    void operator=(const FastArrayCopyIterator& x)
-    {
-      T_base::operator=(x);
-    }
-
+  // NB: this ctor does NOT preserve stack and stride
+  // parameters.  This is for speed purposes.
+  FastArrayCopyIterator(const FastArrayCopyIterator<P_numtype, N_rank>& x) 
+    : T_base(x)
+  { }
+  
+  using T_base::operator=;
+  void operator=(const FastArrayCopyIterator& x)
+  {
+    T_base::operator=(x);
+  }
+  
   using T_base::operator();
 
   T_range_result operator()(Range r0)
