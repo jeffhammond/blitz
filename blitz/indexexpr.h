@@ -30,6 +30,7 @@
 #include <blitz/tinyvec.h>
 #include <blitz/prettyprint.h>
 #include <blitz/etbase.h>
+#include <blitz/array/domain.h>
 
 BZ_NAMESPACE(blitz)
 
@@ -61,6 +62,7 @@ public:
     typedef int T_numtype;
     typedef int T_ctorArg1;     // Dummy; not used
     typedef int T_ctorArg2;     // Ditto
+  typedef int T_range_result; // dummy
 
     static const int 
         numArrayOperands = 0, 
@@ -88,6 +90,12 @@ public:
     int ordering(int)  const { return INT_MIN; }
     int lbound(int)    const { return INT_MIN; }  // tiny(int());
     int ubound(int)    const { return INT_MAX; }  // huge(int()); 
+
+  RectDomain<rank> domain() const 
+  { 
+    const TinyVector<int, rank> lb(lbound(0)), ub(ubound(0));
+    return RectDomain<rank>(lb,ub);
+  }
 
     // See operator*() note
 
@@ -137,6 +145,10 @@ public:
   T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
     BZPRECONDITION(0); return T_numtype(); }
   void _bz_offsetData(size_t i) { BZPRECONDITION(0); }
+
+  // Unclear how to define this, and stencils don't work anyway
+  T_range_result operator()(RectDomain<rank> d) const
+  { BZPRECONDITION(0); }
 
     void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat&) const {
         // NEEDS_WORK-- do real formatting for reductions

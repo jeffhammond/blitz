@@ -203,6 +203,7 @@ public:
     typedef P_numtype T_numtype;
     typedef const Array<T_numtype,N_rank>& T_ctorArg1;
     typedef int                            T_ctorArg2;    // dummy
+  typedef int  T_range_result; // dummy
 
     /*
      * This enum block finds the maximum of the N_map0, N_map1, ..., N_map10
@@ -373,6 +374,16 @@ public:
             return INT_MAX;   // huge(int());
     }
 
+  // defer calculation to lbound/ubound
+  RectDomain<rank> domain() const 
+  { 
+    TinyVector<int, rank> lb, ub;
+    for(int r=0; r<rank; ++r) {
+      lb[r]=lbound(r); ub[r]=ubound(r); 
+    }
+    return RectDomain<rank>(lb,ub);
+  }
+
     // If you have a precondition failure on this routine, it means
     // you are trying to use stack iteration mode on an expression
     // which contains an index placeholder.  You must use index
@@ -461,8 +472,11 @@ public:
   T_numtype shift(int offset, int dim) { BZPRECONDITION(0); return T_numtype(); }
   T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
     BZPRECONDITION(0); return T_numtype(); }
-
   void _bz_offsetData(size_t i) { BZPRECONDITION(0); }
+
+  // Unclear how to define this, and stencils don't work anyway
+  T_range_result operator()(RectDomain<rank> d) const
+  { BZPRECONDITION(0); }
 
     void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat&) const
     {

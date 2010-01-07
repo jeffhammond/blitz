@@ -43,13 +43,15 @@
  * _bz_ArrayExprBinaryOp              "
  * _bz_ArrayExprTernaryOp             "
  * _bz_ArrayExprConstant              "
- * _bz_ArrayMap               <blitz/array/map.h>
+ * ArrayIndexMapping          <blitz/array/map.h>
  * _bz_ArrayExprReduce        <blitz/array/reduce.h>
- * StencilExpr                <blitz/array/stencil-et.h>
- *   ... and derived types            "
- * _bz_ArrayExprStencilExpr           "
+ * _bz_StencilExpr            <blitz/array/stencil-et.h>
  *   ... and derived types            "
  * IndexPlaceholder           <blitz/indexexpr.h>
+ * _bz_ArrayWhere             <blitz/array/where.h>
+ * _bz_FunctorExpr            <blitz/array/functorExpr.h>
+ * _bz_FunctorExpr2                   "
+ * _bz_FunctorExpr3                   "
  */
 
 BZ_NAMESPACE(blitz)
@@ -159,7 +161,7 @@ public:
   {
     return T_range_result(iter_(r0));
   }
-  T_range_result operator()(RectDomain<T_expr::rank> d) const
+  T_range_result operator()(RectDomain<rank> d) const
   {
     return T_range_result(iter_(d));
   }
@@ -402,7 +404,7 @@ public:
   {
     return T_range_result(iter_(r0));
   }
-  T_range_result operator()(RectDomain<T_expr::rank> d) const
+  T_range_result operator()(RectDomain<rank> d) const
   {
     return T_range_result(iter_(d));
   }

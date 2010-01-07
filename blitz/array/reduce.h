@@ -75,6 +75,7 @@ public:
     typedef _bz_typename T_reduction::T_numtype T_numtype;
     typedef T_expr      T_ctorArg1;
     typedef T_reduction T_ctorArg2;
+  typedef int  T_range_result; // dummy
 
     static const int 
         numArrayOperands = T_expr::numArrayOperands,
@@ -98,6 +99,7 @@ public:
     int ordering(const int r)  const { return ordering_[r];       }
     int lbound(const int r)    const { return iter_.lbound(r);    }
     int ubound(const int r)    const { return iter_.ubound(r);    }
+    RectDomain<rank> domain() const { return iter_.domain(); }
 
     template<int N_destRank>
     T_numtype operator()(const TinyVector<int, N_destRank>& destIndex)
@@ -165,6 +167,10 @@ public:
     T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
       BZPRECONDITION(0); return T_numtype(); }
     void _bz_offsetData(size_t i) { BZPRECONDITION(0); }
+
+  // Unclear how to define this, and stencils don't work anyway
+  T_range_result operator()(RectDomain<rank> d) const
+  { BZPRECONDITION(0); }
 
     void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format) const
     {
