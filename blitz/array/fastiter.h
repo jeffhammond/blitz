@@ -73,7 +73,7 @@ public:
 
     // NB: this ctor does NOT preserve stack and stride
     // parameters.  This is for speed purposes.
-  FastArrayIteratorBase(const T_iterator& x)
+    FastArrayIteratorBase(const T_iterator& x)
         : data_(x.data_), array_(x.array_)
     { }
 
@@ -136,6 +136,8 @@ public:
             return INT_MAX;   // huge(int());
     }
     
+    RectDomain<rank> domain() const { return array_.domain(); };
+
     T_numtype first_value() const { return *data_; }
 
     T_numtype operator*()
@@ -186,7 +188,15 @@ public:
 
     // this is needed for the stencil expression fastRead to work
     void _bz_offsetData(size_t i)
-    { data_+=i; }
+    { data_ += i;}
+
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { data_ += offset*array_.stride(dim); }
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    { data_ += offset1*array_.stride(dim1); 
+      data_ += offset2*array_.stride(dim2); }
 
     int stride() const
     { return stride_; }
@@ -308,16 +318,19 @@ public:
     }
 
 protected:
-  const T_numtype * restrict          data_;
+  const T_numtype * restrict           data_;
   P_arraytype                          array_;
-  ConstPointerStack<T_numtype,N_rank>     stack_;
-  ptrdiff_t                                     stride_;
+  ConstPointerStack<T_numtype,N_rank>  stack_;
+  ptrdiff_t                            stride_;
 };
+
 
 template<typename P_numtype, int N_rank> class FastArrayCopyIterator;
 
 template<typename P_numtype, int N_rank>
-class FastArrayIterator : public FastArrayIteratorBase<P_numtype, N_rank, const Array<P_numtype, N_rank>&> {
+class FastArrayIterator : 
+  public FastArrayIteratorBase<P_numtype, N_rank, const Array<P_numtype, N_rank>&> 
+{
 public:
   typedef FastArrayIteratorBase<P_numtype, N_rank, 
 				const Array<P_numtype, N_rank>&> T_base;
@@ -337,6 +350,8 @@ public:
   FastArrayIterator(const FastArrayIterator<P_numtype, N_rank>& x) 
     : T_base(x)
   { }
+
+  FastArrayIterator(const T_array& array) : T_base(array) {}
   
   using T_base::operator=;
   void operator=(const FastArrayIterator<P_numtype, N_rank>& x)
@@ -354,18 +369,15 @@ public:
   {
     return T_range_result(T_base::array_(d));
   }
-
-
-  FastArrayIterator(const typename T_base::T_array& array)
-        : T_base(array)
-  { }
 };
 
 /* This version of the FastArrayIterator makes a COPY of the array
    it's pointing to. This makes it possible to return expressions of
    arrays that have gone out of scope. */
 template<typename P_numtype, int N_rank>
-class FastArrayCopyIterator : public FastArrayIteratorBase<P_numtype, N_rank, const Array<P_numtype, N_rank> > {
+class FastArrayCopyIterator : 
+  public FastArrayIteratorBase<P_numtype, N_rank, const Array<P_numtype, N_rank> >
+{
 public:
   typedef FastArrayIteratorBase<P_numtype, N_rank, 
 				const Array<P_numtype, N_rank> > T_base;
@@ -386,6 +398,8 @@ public:
   FastArrayCopyIterator(const FastArrayCopyIterator<P_numtype, N_rank>& x) 
     : T_base(x)
   { }
+
+  FastArrayCopyIterator(const T_array& array) : T_base(array) { }
   
   using T_base::operator=;
   void operator=(const FastArrayCopyIterator& x)
@@ -403,11 +417,6 @@ public:
   {
     return T_range_result(T_base::array_(d));
   }
-
-
-  FastArrayCopyIterator(const typename T_base::T_array& array)
-        : T_base(array)
-  { }
 };
 
 
