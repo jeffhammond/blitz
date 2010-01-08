@@ -48,6 +48,13 @@ template<typename T> struct _bz_IndexParameter {
 #endif
 };
 
+/* There are resolution problems with the functions in this file that
+   generate ET objects and the functions in stencilops.h that define
+   the stencil operators. Because the operators are defined as
+   all-encompassing templates, they will match to arrays with higher
+   priority than the functions here will match to ETBase<..>. This
+   means we must have explicit functions that match Arrays even though
+   the general ETBase function would work. */
 
 /** ET base class for applying a stencil to an expression. */
 template<typename P_expr, _bz_typename P_result>
@@ -155,11 +162,6 @@ class _bz_StencilExpr {
   bool isStride(int rank, int stride) const
   { return iter_.isStride(rank,stride); }
 
-  T_numtype shift(int offset, int dim)
-  {
-    return iter_.shift(offset, dim);
-  }
-
   void _bz_offsetData(size_t i) { iter_._bz_offsetData(i); }
 
   void prettyPrint(BZ_STD_SCOPE(string) &str) const
@@ -177,6 +179,167 @@ class _bz_StencilExpr {
 
   P_expr iter_;
 };
+
+/** ET base class for applying a stencil to an expression. */
+template<typename P_expr1, typename P_expr2, _bz_typename P_result>
+class _bz_StencilExpr2 {
+ public:
+  typedef P_expr1 T_expr1;
+  typedef P_expr2 T_expr2;
+  typedef _bz_typename T_expr1::T_numtype T_numtype1;
+  typedef _bz_typename T_expr2::T_numtype T_numtype2;
+  typedef P_result T_numtype;
+  typedef T_expr1 T_ctorArg1;
+  typedef T_expr2 T_ctorArg2;
+  
+  static const int 
+  numArrayOperands = T_expr1::numArrayOperands
+    + T_expr2::numArrayOperands,
+    numIndexPlaceholders = T_expr1::numIndexPlaceholders
+    + T_expr2::numIndexPlaceholders,
+    rank = (T_expr1::rank > T_expr2::rank) 
+    ? T_expr1::rank : T_expr2::rank;
+  
+  _bz_StencilExpr2(const _bz_StencilExpr2<T_expr1, T_expr2, T_numtype>& a)
+    : iter1_(a.iter1_), iter2_(a.iter2_)
+    { }
+  
+  _bz_StencilExpr2(BZ_ETPARM(T_expr1) a, BZ_ETPARM(T_expr2) b)
+    : iter1_(a), iter2_(b)
+  { }
+
+  /*
+  // what is this for?
+ _bz_StencilExpr2(_bz_typename T_expr1::T_ctorArg1 a)
+   : iter_(a)
+  { }
+  */
+
+#if BZ_TEMPLATE_CTOR_DOESNT_CAUSE_HAVOC
+  template<typename T1, typename T2>
+  explicit _bz_StencilExpr2(BZ_ETPARM(T1) a, BZ_ETPARM(T2) b)
+    : iter1_(a), iter2_(b)
+  { }
+#endif
+
+    int ascending(const int rank) const {
+        return bounds::compute_ascending(rank, iter1_.ascending(rank), iter2_.ascending(rank));
+    }
+
+    int ordering(const int rank) const {
+        return bounds::compute_ordering(rank, iter1_.ordering(rank), iter2_.ordering(rank));
+    }
+
+    int lbound(const int rank) const { 
+        return bounds::compute_lbound(rank, iter1_.lbound(rank), iter2_.lbound(rank));
+    }
+
+    int ubound(const int rank) const {
+        return bounds::compute_ubound(rank, iter1_.ubound(rank), iter2_.ubound(rank));
+    }
+
+  // defer calculation to lbound/ubound
+  RectDomain<rank> domain() const 
+  { 
+    TinyVector<int, rank> lb, ub;
+    for(int r=0; r<rank; ++r) {
+      lb[r]=lbound(r); ub[r]=ubound(r); 
+    }
+    return RectDomain<rank>(lb,ub);
+  }
+
+    void push(int position)
+    { 
+        iter1_.push(position); 
+        iter2_.push(position);
+    }
+
+    void pop(int position)
+    { 
+        iter1_.pop(position); 
+        iter2_.pop(position);
+    }
+
+    void advance()
+    { 
+        iter1_.advance(); 
+        iter2_.advance();
+    }
+
+    void advance(int n)
+    {
+        iter1_.advance(n);
+        iter2_.advance(n);
+    }
+
+    void loadStride(int rank)
+    { 
+        iter1_.loadStride(rank); 
+        iter2_.loadStride(rank);
+    }
+
+    int suggestStride(int rank) const
+    {
+        int stride1 = iter1_.suggestStride(rank);
+        int stride2 = iter2_.suggestStride(rank);
+        return (stride1 > stride2) ? stride1 : stride2;
+    }
+
+    bool isStride(int rank, int stride) const
+    {
+        return iter1_.isStride(rank,stride) && iter2_.isStride(rank,stride);
+    }
+    
+    bool isUnitStride(int rank) const
+    { return iter1_.isUnitStride(rank) && iter2_.isUnitStride(rank); }
+
+    void advanceUnitStride()
+    { 
+        iter1_.advanceUnitStride(); 
+        iter2_.advanceUnitStride();
+    }
+
+    bool canCollapse(int outerLoopRank, int innerLoopRank) const
+    { 
+        return iter1_.canCollapse(outerLoopRank, innerLoopRank)
+            && iter2_.canCollapse(outerLoopRank, innerLoopRank);
+    }
+
+    void moveTo(const TinyVector<int,rank>& i)
+    {
+        iter1_.moveTo(i);
+        iter2_.moveTo(i);
+    }
+
+  void _bz_offsetData(size_t i) 
+  {
+    iter1_._bz_offsetData(i);
+    iter2_._bz_offsetData(i);
+  }
+
+  template<typename T_shape>
+    bool shapeCheck(const T_shape& shape)
+  { return iter1_.shapeCheck(shape) && iter2_.shapeCheck(shape); }
+
+ protected:
+  _bz_StencilExpr2() { }
+
+  P_expr1 iter1_;
+  P_expr2 iter2_;
+};
+
+/* To avoid matching to the stencil operator in stencilops.h, we must
+   explicitly define stencils that operate on arrays. This macro makes
+   this slightly less painful for the majority of the stencil classes. */
+#define BZ_ET_STENCIL_REDIRECT(name)					\
+  template<typename T, int N>						\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+   name(const Array<T,N>& d1)						\
+   { return name(d1.wrap()); }						\
+   template<typename T, int N>						\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+   name(Array<T,N>& d1)							\
+   { return name(d1.wrap()); }
 
 
 /* Defines a stencil ET that operates on an array<P_numtype, N_rank>
@@ -231,6 +394,22 @@ class _bz_StencilExpr {
       iter_._bz_offsetData(-i);						\
       return r;								\
     }									\
+    									\
+    T_numtype shift(int offset, int dim)				\
+    {									\
+      iter_._bz_offsetData(offset, dim);				\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      return r;								\
+    }									\
 									\
     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
 		     prettyPrintFormat& format) const			\
@@ -241,63 +420,369 @@ class _bz_StencilExpr {
       str += ")";							\
     }									\
   };									\
-									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-  inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank>, result > > \
-  name(const Array<P_numtype,N_rank>& A)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank>, result > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));				\
-  }									\
-  /* create ET from application to Array */				\
-  template<typename P_numtype, int N_rank>				\
-  inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank>, result> > \
-  name(Array<P_numtype,N_rank>& A)					\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank>, result > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));				\
-  }									\
-  /* create ET from application to expression */			\
+  /* generate an ET object from an expression */			\
   template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result, etresult> > \
+  inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, etresult> > \
   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
   {									\
-    return _bz_ArrayExpr<name ## _et<typename T1::T_range_result, etresult> > \
+    return _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, etresult> > \
       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
-  }									
+  }									\
+  /* redirect calls with bare arrays to the main function */		\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, result> > \
+  name(const Array<T,N>& d1)						\
+  { return name(d1.wrap()); }						\
+									\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, result> > \
+  name(Array<T,N>& d1)							\
+  { return name(d1.wrap()); }						\
   
 
-/* Defines a stencil ET that operates on an array<P_numtype, N_rank>
-   and returns a multicomponent array<TinyMatrix<P_numtype::T_element,
-   rank, rank> >, N_rank>. P_numtype can be a TinyVector or a scalar,
-   I think. */
+/* Defines a stencil ET that operates on two arrays of arbitrary type
+   and specifies the return type as array<result, N_rank>. The result
+   type is used when running on an array and the etresult type when
+   running on an expression. If you want to refer to the native type
+   of the expression, set result="P_numtype" and etresult="typename
+   T1::T_numtype". Sorry for that ugliness, but they define types
+   differently. */
 
-#define BZ_ET_STENCILM(name,result_rank, MINB, MAXB)			\
-  template<typename P_expr>						\
-  class name ## _et : public _bz_StencilExpr<P_expr, TinyMatrix<_bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element, result_rank, result_rank> > \
+#define BZ_ET_STENCIL2(name,result, etresult, MINB, MAXB)		\
+  template<typename P_expr1, typename P_expr2, _bz_typename P_numtype>	\
+  class name ## _et2 : public _bz_StencilExpr2<P_expr1, P_expr2, P_numtype> \
   {									\
-public:									\
-    typedef _bz_StencilExpr<P_expr, TinyMatrix<_bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element, result_rank, result_rank> > T_base; \
+  public:								\
+    typedef _bz_StencilExpr2<P_expr1, P_expr2, P_numtype> T_base;	\
     typedef _bz_typename T_base::T_numtype T_numtype;			\
-    typedef _bz_typename T_base::T_expr T_expr;				\
-    typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
+    /*    using T_base::T_expr1;					\
+	  using T_base::T_expr2; */					\
+    typedef _bz_typename T_base::T_expr1 T_expr1;			\
+    typedef _bz_typename T_base::T_expr2 T_expr2;			\
+    typedef  name ## _et2<_bz_typename P_expr1::T_range_result, _bz_typename P_expr2::T_range_result, T_numtype> T_range_result; \
 									\
-    using T_base::iter_;						\
+    using T_base::iter1_;						\
+    using T_base::iter2_;						\
     using T_base::rank;							\
   public:								\
-    name ## _et(const name ## _et& a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(BZ_ETPARM(T_expr) a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
+    name ## _et2(const name ## _et2& a) :				\
+      _bz_StencilExpr2<P_expr1, P_expr2, T_numtype>(a)			\
       { }								\
 									\
+    name ## _et2(BZ_ETPARM(T_expr1) a, BZ_ETPARM(T_expr2) b) :		\
+      _bz_StencilExpr2<P_expr1, P_expr2, T_numtype>(a, b)		\
+      { }								\
+    /*									\
+    name ## _et2(_bz_typename T_expr::T_ctorArg1 a) :			\
+      _bz_StencilExpr2<P_expr, T_numtype>(a)				\
+      { }								\
+    */									\
+    T_numtype operator*()						\
+    { return name(iter1_, iter2_); }					\
+									\
+    T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
+    { iter1_.moveTo(i); iter2_.moveTo(i); return name(iter1_, iter2_); } \
+									\
+    T_range_result operator()(const RectDomain<rank>& d) const		\
+    { return T_range_result(iter1_(d), iter2_(d)); }			\
+									\
+    T_numtype operator[](int i)						\
+    { return name(iter1_[i], iter2_[i]); }				\
+									\
+    T_numtype fastRead(int i)						\
+    {/* this probably isn't very fast... */				\
+      iter1_._bz_offsetData(i); iter2_._bz_offsetData(i);		\
+      T_numtype r = name (iter1_, iter2_);				\
+      iter1_._bz_offsetData(-i); iter2_._bz_offsetData(-i);		\
+      return r;								\
+    }									\
+    									\
+    T_numtype shift(int offset, int dim)				\
+    {									\
+      iter1_._bz_offsetData(offset, dim);				\
+      iter2_._bz_offsetData(offset, dim);				\
+      T_numtype r = name (iter1_, iter2_);				\
+      iter1_._bz_offsetData(-offset, dim);				\
+      iter2_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter1_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      iter2_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter1_, iter2_);				\
+      iter1_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      iter2_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      return r;								\
+    }									\
+									\
+    void prettyPrint(BZ_STD_SCOPE(string) &str,				\
+		     prettyPrintFormat& format) const			\
+    {									\
+      str += "name (stencil)";						\
+      str += "(";							\
+      iter1_.prettyPrint(str, format);					\
+      str += ", ";							\
+      iter2_.prettyPrint(str, format);					\
+      str += ")";							\
+    }									\
+  };									\
+									\
+  /* create ET object from application to expression */			\
+  template<typename T1, typename T2>					\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_range_result, etresult> > \
+  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1,				\
+       const BZ_BLITZ_SCOPE(ETBase)<T2>& d2)				\
+  {									\
+    return _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_range_result, etresult> > \
+      (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB)), \
+       BZ_BLITZ_SCOPE(asExpr)<T2>::getExpr(d2.unwrap())(_bz_shrinkDomain(d2.unwrap().domain(),MINB, MAXB))); \
+  }									\
+  /* matches to calls involving bare arrays (this is very annoying	\
+     because we have to exactly match every possible call combination	\
+     to ensure that this matches instead of the operator in		\
+     stencilops.h) */							\
+  template<typename T1, typename T2, int N2>				\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T2,N2> >::T_expr::T_range_result, result> > \
+  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1, Array<T2,N2>& d2)		\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T1, typename T2, int N2>				\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T2,N2> >::T_expr::T_range_result, result> > \
+  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1, const Array<T2,N2>& d2)	\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T1, int N1, typename T2>				\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T1,N1> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_range_result, result> > \
+  name(Array<T1,N1>& d1, const BZ_BLITZ_SCOPE(ETBase)<T2>& d2)		\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T1, int N1, typename T2>				\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T1,N1> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_range_result, result> > \
+  name(const Array<T1,N1>& d1, const BZ_BLITZ_SCOPE(ETBase)<T2>& d2)	\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T1, int N1, typename T2, int N2>			\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T1,N1> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T2,N2> >::T_expr::T_range_result, result> > \
+  name(const Array<T1,N1>& d1, Array<T2,N2>& d2)				\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T1, int N1, typename T2, int N2>			\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T1,N1> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T2,N2> >::T_expr::T_range_result, result> > \
+  name(Array<T1,N1>& d1, const Array<T2,N2>& d2)			\
+  { return name(d1.wrap(), d2.wrap()); }				\
+  									\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, result> > \
+  name(Array<T,N>& d1, Array<T,N>& d2)					\
+  { return name(d1.wrap(), d2.wrap()); }				\
+									\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et2<typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, result> > \
+  name(const Array<T,N>& d1, const Array<T,N>& d2)			\
+  { return name(d1.wrap(), d2.wrap()); }
+
+
+ /* Defines a stencil ET that operates on an array<P_numtype, N_rank>
+    and returns a multicomponent array<TinyMatrix<P_numtype::T_element,
+    rank, rank> >, N_rank>. P_numtype can be a TinyVector or a scalar,
+    I think. */
+
+ #define BZ_ET_STENCILM(name,result_rank, MINB, MAXB)			\
+   template<typename P_expr>						\
+   class name ## _et : public _bz_StencilExpr<P_expr, TinyMatrix<_bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element, result_rank, result_rank> > \
+   {									\
+ public:									\
+     typedef _bz_StencilExpr<P_expr, TinyMatrix<_bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element, result_rank, result_rank> > T_base; \
+     typedef _bz_typename T_base::T_numtype T_numtype;			\
+     typedef _bz_typename T_base::T_expr T_expr;				\
+     typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
+									 \
+     using T_base::iter_;						\
+     using T_base::rank;							\
+   public:								\
+     name ## _et(const name ## _et& a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(BZ_ETPARM(T_expr) a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     T_numtype operator*()						\
+     { return name(iter_); }						\
+     T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
+     { iter_.moveTo(i); return name(iter_); }				\
+									 \
+     T_range_result operator()(const RectDomain<rank>& d) const		\
+     { return T_range_result(iter_(d)); }				\
+									 \
+     T_numtype operator[](int i)						\
+     { return name(iter_[i]); }						\
+									 \
+     T_numtype fastRead(int i)						\
+     {/* this probably isn't very fast... */				\
+       iter_._bz_offsetData(i);						\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-i);						\
+       return r;								\
+     }									\
+									 \
+     T_numtype shift(int offset, int dim)				\
+     {									\
+       iter_._bz_offsetData(offset, dim);				\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-offset, dim);				\
+       return r;								\
+     }									\
+									 \
+     T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+     {									\
+       iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+       return r;								\
+     }									\
+									 \
+     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
+		      prettyPrintFormat& format) const			\
+     {									\
+       str += "name (stencil)";						\
+       str += "(";							\
+       iter_.prettyPrint(str, format);					\
+       str += ")";							\
+     }									\
+   };									\
+   /* create ET from application to expression */			\
+   template<typename T1>						\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> > \
+   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
+   {									\
+     return _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
+       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
+       }								\
+   BZ_ET_STENCIL_REDIRECT(name)						\
+
+
+ /* Defines a stencil ET that operates on a (scalar) array<P_numtype,
+    N_rank> and returns a multicomponent
+    array<TinyVector<P_numtype::T_element, result_rank> >, N_rank>. */
+
+ #define BZ_ET_STENCILV(name,result_rank, MINB, MAXB)			\
+   template<typename P_expr>						\
+   class name ## _et : public _bz_StencilExpr<P_expr, TinyVector<typename P_expr::T_numtype,result_rank> > \
+   {									\
+ public:									\
+     typedef _bz_StencilExpr<P_expr, TinyVector<typename P_expr::T_numtype,result_rank> > T_base; \
+     typedef _bz_typename T_base::T_numtype T_numtype;			\
+     typedef _bz_typename T_base::T_expr T_expr;				\
+     typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
+									 \
+     using T_base::iter_;						\
+     using T_base::rank;							\
+   public:								\
+     name ## _et(const name ## _et& a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(BZ_ETPARM(T_expr) a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     T_numtype operator*()						\
+     { return name(iter_); }						\
+     T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
+     { iter_.moveTo(i); return name(iter_); }				\
+									 \
+     T_range_result operator()(const RectDomain<rank>& d) const		\
+     { return T_range_result(iter_(d)); }				\
+									 \
+     T_numtype operator[](int i)						\
+     { return name(iter_[i]); }						\
+									 \
+     T_numtype fastRead(int i)						\
+     {/* this probably isn't very fast... */				\
+       iter_._bz_offsetData(i);						\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-i);						\
+       return r;								\
+     }									\
+									 \
+     T_numtype shift(int offset, int dim)				\
+     {									\
+       iter_._bz_offsetData(offset, dim);				\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-offset, dim);				\
+       return r;								\
+     }									\
+									 \
+     T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+     {									\
+       iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+       T_numtype r = name (iter_);					\
+       iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+       return r;								\
+     }									\
+									 \
+     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
+		      prettyPrintFormat& format) const			\
+     {									\
+       str += "name (stencil)";						\
+       str += "(";							\
+       iter_.prettyPrint(str, format);					\
+       str += ")";							\
+     }									\
+   };									\
+  /* create ET from application to expression */				\
+   template<typename T1>							\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
+   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
+   {									\
+     return _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
+       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
+   }									\
+   BZ_ET_STENCIL_REDIRECT(name)
+
+
+ /* Defines a stencil ET that operates on an array<P_numtype, N_rank>
+    (where P_numtype presumably is a multicomponent type) and returns a
+    scalar array<P_numtype::T_element, N_rank>. */
+
+ #define BZ_ET_STENCIL_SCA(name, MINB, MAXB)				\
+   template<typename P_expr>						\
+   class name ## _et : public _bz_StencilExpr<P_expr, _bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element> \
+   {									\
+ public:									\
+     typedef _bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element T_result; \
+     typedef _bz_StencilExpr<P_expr, T_result> T_base;			\
+     typedef _bz_typename T_base::T_numtype T_numtype;			\
+     typedef _bz_typename T_base::T_expr T_expr;				\
+     typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
+									 \
+     using T_base::iter_;						\
+     using T_base::rank;							\
+   public:								\
+     name ## _et(const name ## _et& a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(BZ_ETPARM(T_expr) a) :					\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+       { }								\
+									 \
+     name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
+     _bz_StencilExpr<P_expr, T_numtype>(a)				\
+             { }								\
+    									\
     T_numtype operator*()						\
     { return name(iter_); }						\
     T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
@@ -317,85 +802,19 @@ public:									\
       return r;								\
     }									\
 									\
-    void prettyPrint(BZ_STD_SCOPE(string) &str,				\
-		     prettyPrintFormat& format) const			\
+    T_numtype shift(int offset, int dim)				\
     {									\
-      str += "name (stencil)";						\
-      str += "(";							\
-      iter_.prettyPrint(str, format);					\
-      str += ")";							\
-    }									\
-  };									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(const Array<P_numtype,N_rank>& A)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));			\
-  }									\
-  /* create ET from application to Array */				\
-template<typename P_numtype, int N_rank>				\
- inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
- name(Array<P_numtype,N_rank>& A)					\
-{									\
-  return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-    (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));			\
-}									\
- /* create ET from application to expression */				\
-  template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
-  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
-      (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
-  }									
-
-/* Defines a stencil ET that operates on a (scalar) array<P_numtype,
-   N_rank> and returns a multicomponent
-   array<TinyVector<P_numtype::T_element, result_rank> >, N_rank>. */
-
-#define BZ_ET_STENCILV(name,result_rank, MINB, MAXB)			\
-  template<typename P_expr>						\
-  class name ## _et : public _bz_StencilExpr<P_expr, TinyVector<typename P_expr::T_numtype,result_rank> > \
-  {									\
-public:									\
-    typedef _bz_StencilExpr<P_expr, TinyVector<typename P_expr::T_numtype,result_rank> > T_base; \
-    typedef _bz_typename T_base::T_numtype T_numtype;			\
-    typedef _bz_typename T_base::T_expr T_expr;				\
-    typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
-									\
-    using T_base::iter_;						\
-    using T_base::rank;							\
-  public:								\
-    name ## _et(const name ## _et& a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(BZ_ETPARM(T_expr) a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-									\
-    T_numtype operator*()						\
-    { return name(iter_); }						\
-    T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
-    { iter_.moveTo(i); return name(iter_); }				\
-									\
-    T_range_result operator()(const RectDomain<rank>& d) const		\
-    { return T_range_result(iter_(d)); }				\
-									\
-    T_numtype operator[](int i)						\
-    { return name(iter_[i]); }						\
-									\
-    T_numtype fastRead(int i)						\
-    {/* this probably isn't very fast... */				\
-      iter_._bz_offsetData(i);						\
+      iter_._bz_offsetData(offset, dim);				\
       T_numtype r = name (iter_);					\
-      iter_._bz_offsetData(-i);						\
+      iter_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
       return r;								\
     }									\
 									\
@@ -408,113 +827,15 @@ public:									\
       str += ")";							\
     }									\
   };									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(const Array<P_numtype,N_rank>& A)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));				\
-  }									\
-  /* create ET from application to Array */				\
-template<typename P_numtype, int N_rank>				\
- inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
- name(Array<P_numtype,N_rank>& A)					\
-{									\
-  return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-    (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));				\
-}									\
- /* create ET from application to expression */				\
-  template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
-  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
-      (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
-  }									
-
-/* Defines a stencil ET that operates on an array<P_numtype, N_rank>
-   (where P_numtype presumably is a multicomponent type) and returns a
-   scalar array<P_numtype::T_element, N_rank>. */
-
-#define BZ_ET_STENCIL_SCA(name, MINB, MAXB)				\
-  template<typename P_expr>						\
-  class name ## _et : public _bz_StencilExpr<P_expr, _bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element> \
-  {									\
-public:									\
-    typedef _bz_typename multicomponent_traits<typename P_expr::T_numtype>::T_element T_result; \
-    typedef _bz_StencilExpr<P_expr, T_result> T_base;			\
-    typedef _bz_typename T_base::T_numtype T_numtype;			\
-    typedef _bz_typename T_base::T_expr T_expr;				\
-    typedef  name ## _et<_bz_typename P_expr::T_range_result> T_range_result; \
-									\
-    using T_base::iter_;						\
-    using T_base::rank;							\
-  public:								\
-    name ## _et(const name ## _et& a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(BZ_ETPARM(T_expr) a) :					\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    name ## _et(_bz_typename T_expr::T_ctorArg1 a) :			\
-    _bz_StencilExpr<P_expr, T_numtype>(a)				\
-      { }								\
-    									\
-    T_numtype operator*()						\
-    { return name(iter_); }						\
-    T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i) \
-    { iter_.moveTo(i); return name(iter_); }				\
-									\
-    T_range_result operator()(const RectDomain<rank>& d) const		\
-    { return T_range_result(iter_(d)); }				\
-									\
-    T_numtype operator[](int i)						\
-    { return name(iter_[i]); }						\
-									\
-    T_numtype fastRead(int i)						\
-    {/* this probably isn't very fast... */				\
-      iter_._bz_offsetData(i);						\
-      T_numtype r = name (iter_);					\
-      iter_._bz_offsetData(-i);						\
-      return r;								\
-    }									\
-									\
-    void prettyPrint(BZ_STD_SCOPE(string) &str,				\
-		     prettyPrintFormat& format) const			\
-    {									\
-      str += "name (stencil)";						\
-      str += "(";							\
-      iter_.prettyPrint(str, format);					\
-      str += ")";							\
-    }									\
-  };									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(const Array<P_numtype,N_rank>& A)				\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));			\
-  }									\
-  /* create ET from application to Array */				\
-  template<typename P_numtype, int N_rank>				\
-  inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(Array<P_numtype,N_rank>& A)					\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),MINB, MAXB)));			\
-  }									\
   /* create ET from application to expression */			\
   template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+  inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1)				\
   {									\
-    return _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+    return _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),MINB, MAXB))); \
-  }									
+  }									\
+   BZ_ET_STENCIL_REDIRECT(name)
 
 
 /* Defines a stencil ET difference operator that operates on an
@@ -572,6 +893,22 @@ inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
       return r;								\
     }									\
 									\
+    T_numtype shift(int offset, int dim)				\
+    {									\
+      iter_._bz_offsetData(offset, dim);				\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      return r;								\
+    }									\
+									\
     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
 		     prettyPrintFormat& format) const			\
     {									\
@@ -584,44 +921,25 @@ inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
   private:								\
     int dim_;								\
   };									\
-  /* bounds-free old version for testing */				\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayIterator<P_numtype, N_rank> > > \
-  name ## old(const Array<P_numtype,N_rank>& A, int dim)			\
-  {									\
-    return _bz_ArrayExpr<name ## _et<FastArrayIterator<P_numtype, N_rank> > > \
-      (A,dim);			\
-  }									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(const Array<P_numtype,N_rank>& A, int dim)			\
-  {									\
-    TinyVector<int, N_rank> minb(0), maxb(0);				\
-    minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),minb, maxb)),dim);			\
-  }									\
-  /* create ET from application to Array */				\
-template<typename P_numtype, int N_rank>				\
- inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-name(Array<P_numtype,N_rank>& A, int dim)				\
-{									\
-    TinyVector<int, N_rank> minb(0), maxb(0);				\
-    minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),minb, maxb)),dim);			\
-}									\
  /* create ET from application to expression */				\
   template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+  inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1, int dim)			\
   {									\
-    TinyVector<int, T1::rank> minb(0), maxb(0);				\
+    TinyVector<int, BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::rank> minb(0), maxb(0); \
     minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+    return _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),minb, maxb)), dim); \
-  }									
+  }									\
+  /* forward operations on arrays to main function */			\
+  template<typename T, int N>						\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+  name(const Array<T,N>& d1, int dim)					\
+  { return name(d1.wrap(), dim); }					\
+   template<typename T, int N>						\
+   inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+   name(Array<T,N>& d1, int dim)						\
+   { return name(d1.wrap(), dim); }
 
 
 /* Defines a stencil ET difference operator that operates on a
@@ -675,6 +993,22 @@ name(Array<P_numtype,N_rank>& A, int dim)				\
       return r;								\
     }									\
 									\
+    T_numtype shift(int offset, int dim)				\
+    {									\
+      iter_._bz_offsetData(offset, dim);				\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      return r;								\
+    }									\
+									\
     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
 		     prettyPrintFormat& format) const			\
     {									\
@@ -688,36 +1022,26 @@ name(Array<P_numtype,N_rank>& A, int dim)				\
     int comp_;								\
     int dim_;								\
   };									\
-  /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-  inline _bz_ArrayExpr<name ## _et_multi<FastArrayCopyIterator<TinyVector<P_numtype, N_rank>, N_rank> > > \
-  name(const Array<TinyVector<P_numtype, N_rank>, N_rank>& A, int comp, int dim)	\
-  {									\
-    TinyVector<int, N_rank> minb(0), maxb(0);				\
-    minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et_multi<FastArrayCopyIterator<TinyVector<P_numtype, N_rank>, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),minb, maxb)), comp, dim);		\
-  }									\
-  /* create ET from application to Array */				\
-  template<typename P_numtype, int N_rank>				\
- inline _bz_ArrayExpr<name ## _et_multi<FastArrayCopyIterator<TinyVector<P_numtype, N_rank>, N_rank> > > \
-  name(Array<TinyVector<P_numtype, N_rank>, N_rank>& A, int comp, int dim) \
-{									\
-    TinyVector<int, N_rank> minb(0), maxb(0);				\
-    minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et_multi<FastArrayCopyIterator<TinyVector<P_numtype, N_rank>, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),minb, maxb)), comp, dim);		\
-}									\
- /* create ET from application to expression */				\
+  /* create ET from application to expression */			\
   template<typename T1>							\
-  inline _bz_ArrayExpr<name ## _et_multi<typename T1::T_range_result> >	\
+  inline _bz_ArrayExpr<name ## _et_multi<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
   name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1, int comp, int dim)		\
   {									\
-    TinyVector<int, T1::rank> minb(0), maxb(0);				\
+    TinyVector<int, BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::rank> minb(0), maxb(0);	\
     minb[dim]=MINB; maxb[dim]=MAXB;					\
-    return _bz_ArrayExpr<name ## _et_multi<typename T1::T_range_result> >	\
+    return _bz_ArrayExpr<name ## _et_multi<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> > \
       (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),minb, maxb)), comp, dim); \
-  }									
+  }									\
+  /* forward operations on arrays to main function */			\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et_multi<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+  name(const Array<T,N>& d1, int comp, int dim)				\
+  { return name(d1.wrap(), comp, dim); }				\
+									\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et_multi<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+  name(Array<T,N>& d1, int comp, int dim)				\
+  { return name(d1.wrap(), comp, dim); }
 
 
 /* Defines a stencil ET double-difference operator that operates on an
@@ -774,6 +1098,22 @@ name(Array<P_numtype,N_rank>& A, int dim)				\
      return r;								\
    }									\
 									\
+    T_numtype shift(int offset, int dim)				\
+    {									\
+      iter_._bz_offsetData(offset, dim);				\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset, dim);				\
+      return r;								\
+    }									\
+									\
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2)	\
+    {									\
+      iter_._bz_offsetData(offset1, dim1, offset2, dim2);		\
+      T_numtype r = name (iter_);					\
+      iter_._bz_offsetData(-offset1, dim1, -offset2, dim2);		\
+      return r;								\
+    }									\
+									\
     void prettyPrint(BZ_STD_SCOPE(string) &str,				\
 		     prettyPrintFormat& format) const			\
     {									\
@@ -787,43 +1127,34 @@ private:								\
    int dim1_, dim2_;							\
  };									\
  									\
-   /* create ET from application to const Array */			\
-  template<typename P_numtype, int N_rank>				\
-inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-  name(const Array<P_numtype,N_rank>& A, int dim1, int dim2)		\
-  {									\
-    TinyVector<int, N_rank> minb(0), maxb(0);				\
-    minb[dim1]=MINB1; maxb[dim1]=MAXB1;					\
-    minb[dim2]=MINB2; maxb[dim2]=MAXB2;					\
-    return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-      (A(_bz_shrinkDomain(A.domain(),minb, maxb)),dim1, dim2);		\
-  }									\
-  /* create ET from application to Array */				\
-template<typename P_numtype, int N_rank>				\
- inline _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
- name(Array<P_numtype,N_rank>& A, int dim1, int dim2)			\
-{									\
-  TinyVector<int, N_rank> minb(0), maxb(0);				\
-  minb[dim1]=MINB1; maxb[dim1]=MAXB1;					\
-  minb[dim2]=MINB2; maxb[dim2]=MAXB2;					\
-  return _bz_ArrayExpr<name ## _et<FastArrayCopyIterator<P_numtype, N_rank> > > \
-    (A(_bz_shrinkDomain(A.domain(),minb, maxb)),dim1, dim2);		\
-}									\
  /* create ET from application to expression */				\
 template<typename T1>							\
- inline _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+ inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
  name(const BZ_BLITZ_SCOPE(ETBase)<T1>& d1, int dim1, int dim2)		\
  {									\
-   TinyVector<int, T1::rank> minb(0), maxb(0);				\
+   TinyVector<int, BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::rank> minb(0), maxb(0);	\
    minb[dim1]=MINB1; maxb[dim1]=MAXB1;					\
    minb[dim2]=MINB2; maxb[dim2]=MAXB2;					\
-   return _bz_ArrayExpr<name ## _et<typename T1::T_range_result> >	\
+   return _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_range_result> >	\
      (BZ_BLITZ_SCOPE(asExpr)<T1>::getExpr(d1.unwrap())(_bz_shrinkDomain(d1.unwrap().domain(),minb, maxb)), dim1, dim2); \
- }									
+ }									\
+  /* forward operations on arrays to main function */			\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+  name(const Array<T,N>& d1, int dim1, int dim2)			\
+  { return name(d1.wrap(), dim1, dim2); }				\
+									\
+  template<typename T, int N>						\
+  inline _bz_ArrayExpr<name ## _et<_bz_typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result> > \
+  name(Array<T,N>& d1, int dim1, int dim2)				\
+  { return name(d1.wrap(), dim1, dim2); }
 
 #define bzCC(...) __VA_ARGS__
 
-/* Note: You can't pass templates with >1 parameter as macro
+
+/* Definitions of ET stencil operators follows.
+
+   Note: You can't pass templates with >1 parameter as macro
    parameters because cpp doesn't recognize that the comma is balanced
    between the angle brackets and interprets them as multiple
    arguments, i.e., the following alternative declaration of grad2D
@@ -943,12 +1274,12 @@ BZ_ET_STENCIL_MULTIDIFF(forward22n, 0, 3)
 BZ_ET_STENCIL_MULTIDIFF(forward32n, 0, 4)
 BZ_ET_STENCIL_MULTIDIFF(forward42n, 0, 5)
 
-BZ_ET_STENCIL(Laplacian2D, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1), shape(1,1))
-BZ_ET_STENCIL(Laplacian3D, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1,-1), shape(1,1,1))
-BZ_ET_STENCIL(Laplacian2D4, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2), shape(2,2))
-BZ_ET_STENCIL(Laplacian2D4n, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2), shape(2,2))
-BZ_ET_STENCIL(Laplacian3D4, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2,-2), shape(2,2,2))
-BZ_ET_STENCIL(Laplacian3D4n, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2,-2), shape(2,2,2))
+BZ_ET_STENCIL(Laplacian2D, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1), shape(1,1))
+BZ_ET_STENCIL(Laplacian3D, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1,-1), shape(1,1,1))
+BZ_ET_STENCIL(Laplacian2D4, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2), shape(2,2))
+BZ_ET_STENCIL(Laplacian2D4n, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2), shape(2,2))
+BZ_ET_STENCIL(Laplacian3D4, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2,-2), shape(2,2,2))
+BZ_ET_STENCIL(Laplacian3D4n, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2,-2), shape(2,2,2))
 
 BZ_ET_STENCILV(grad2D, 2, shape(-1,-1), shape(1,1))
 BZ_ET_STENCILV(grad2D4, 2, shape(-2,-2), shape(2,2))
@@ -972,14 +1303,14 @@ BZ_ET_STENCILM(Jacobian3Dn, 3, shape(-1,-1,-1), shape(1,1,1))
 BZ_ET_STENCILM(Jacobian3D4, 3, shape(-2,-2,-2), shape(2,2,2))
 BZ_ET_STENCILM(Jacobian3D4n, 3, shape(-2,-2,-2), shape(2,2,2))
 
-BZ_ET_STENCIL(curl3D, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1,-1), shape(1,1,1))
-BZ_ET_STENCIL(curl3Dn, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1,-1), shape(1,1,1))
-BZ_ET_STENCIL(curl3D4, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2,-2), shape(2,2,2))
-BZ_ET_STENCIL(curl3D4n, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2,-2), shape(2,2,2))
-BZ_ET_STENCIL(curl2D, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1), shape(1,1))
-BZ_ET_STENCIL(curl2Dn, P_numtype, _bz_typename T1::T_numtype, shape(-1,-1), shape(1,1))
-BZ_ET_STENCIL(curl2D4, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2), shape(2,2))
-BZ_ET_STENCIL(curl2D4n, P_numtype, _bz_typename T1::T_numtype, shape(-2,-2), shape(2,2))
+BZ_ET_STENCIL(curl3D, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1,-1), shape(1,1,1))
+BZ_ET_STENCIL(curl3Dn, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1,-1), shape(1,1,1))
+BZ_ET_STENCIL(curl3D4, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2,-2), shape(2,2,2))
+BZ_ET_STENCIL(curl3D4n, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2,-2), shape(2,2,2))
+BZ_ET_STENCIL(curl2D, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1), shape(1,1))
+BZ_ET_STENCIL(curl2Dn, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-1,-1), shape(1,1))
+BZ_ET_STENCIL(curl2D4, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2), shape(2,2))
+BZ_ET_STENCIL(curl2D4n, T, typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, shape(-2,-2), shape(2,2))
 
 BZ_ET_STENCIL_SCA(div2D, shape(-1,-1), shape(1,1))
 BZ_ET_STENCIL_SCA(div2Dn, shape(-1,-1), shape(1,1))
@@ -988,6 +1319,12 @@ BZ_ET_STENCIL_SCA(div2D4n, shape(-2,-2), shape(2,2))
 BZ_ET_STENCIL_SCA(div3D, shape(-1,-1,-1), shape(1,1,1))
 BZ_ET_STENCIL_SCA(div3Dn, shape(-1,-1,-1), shape(1,1,1))
 BZ_ET_STENCIL_SCA(div3D4, shape(-2,-2,-2), shape(2,2,2))
+
+
+BZ_ET_STENCIL2(div, double , bzCC(BZ_PROMOTE(typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_numtype)), shape(-1,-1), shape(1,1))
+BZ_ET_STENCIL2(divn, double , bzCC(BZ_PROMOTE(typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_numtype)), shape(-1,-1), shape(1,1))
+BZ_ET_STENCIL2(div4, double , bzCC(BZ_PROMOTE(typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_numtype)), shape(-2,-2), shape(2,2))
+BZ_ET_STENCIL2(div4n, double , bzCC(BZ_PROMOTE(typename BZ_BLITZ_SCOPE(asExpr)<T1>::T_expr::T_numtype, typename BZ_BLITZ_SCOPE(asExpr)<T2>::T_expr::T_numtype)), shape(-2,-2), shape(2,2))
 
 BZ_ET_STENCIL_DIFF2(mixed22, -1, 1, -1, 1)
 BZ_ET_STENCIL_DIFF2(mixed22n, -1, 1, -1, 1)
