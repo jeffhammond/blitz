@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /***************************************************************************
- * blitz/array/stencil-et.h  Expression-template-capabale stencils
+ * blitz/array/stencil-et.h  Expression-template-capable stencils
  *
  * Copyright (C) 1997-2001 Todd Veldhuizen <tveldhui@oonumerics.org>
  *
@@ -25,6 +25,12 @@
 #define BZ_ARRAY_STENCIL_ET_H
 
 BZ_NAMESPACE(blitz)
+
+/* Stencils as currently implemented rely on being able to give an
+   iterator type to the operator. This means they won't work on
+   methods that do traversals of other types. In particular, they
+   can't take operands that include: reductions, index placeholders,
+   index reorderings. */
 
 // Utility function for shrinking the domain of the expression the
 // stencil operates on.
