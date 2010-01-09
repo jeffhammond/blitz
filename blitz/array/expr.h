@@ -205,11 +205,16 @@ public:
     T_numtype fastRead(int i)
     { return iter_.fastRead(i); }
 
-  // this is needed for the stencil expression fastRead to work
-  void _bz_offsetData(size_t i)
-  {
-    iter_._bz_offsetData(i);
-  }
+    // this is needed for the stencil expression fastRead to work
+    void _bz_offsetData(size_t i)
+    { iter_._bz_offsetData(i); }
+
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { iter_._bz_offsetData(offset, dim);}
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    { iter_._bz_offsetData(offset1, dim1, offset2, dim2);}
 
     int suggestStride(int rank) const
     { return iter_.suggestStride(rank); }
@@ -475,6 +480,13 @@ public:
     iter_._bz_offsetData(i);
   }
 
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { iter_._bz_offsetData(offset, dim);}
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    { iter_._bz_offsetData(offset1, dim1, offset2, dim2);}
+
     int suggestStride(int rank) const
     { return iter_.suggestStride(rank); }
 
@@ -629,12 +641,25 @@ public:
     T_numtype fastRead(int i)
     { return T_op::apply(iter1_.fastRead(i), iter2_.fastRead(i)); }
 
-  // this is needed for the stencil expression fastRead to work
-  void _bz_offsetData(size_t i)
+    // this is needed for the stencil expression fastRead to work
+    void _bz_offsetData(size_t i)
   {
     iter1_._bz_offsetData(i);
     iter2_._bz_offsetData(i);
   }
+
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { 
+      iter1_._bz_offsetData(offset, dim);
+      iter2_._bz_offsetData(offset, dim);
+    }
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    { 
+      iter1_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter2_._bz_offsetData(offset1, dim1, offset2, dim2);
+    }
 
     int suggestStride(int rank) const
     {
@@ -847,13 +872,28 @@ public:
                            iter3_.fastRead(i));
     }
 
-  // this is needed for the stencil expression fastRead to work
-  void _bz_offsetData(size_t i)
-  {
-    iter1_._bz_offsetData(i);
-    iter2_._bz_offsetData(i);
-    iter3_._bz_offsetData(i);
-  }
+    // this is needed for the stencil expression fastRead to work
+    void _bz_offsetData(size_t i)
+    {
+      iter1_._bz_offsetData(i);
+      iter2_._bz_offsetData(i);
+      iter3_._bz_offsetData(i);
+    }
+
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { 
+      iter1_._bz_offsetData(offset, dim);
+      iter2_._bz_offsetData(offset, dim);
+      iter3_._bz_offsetData(offset, dim);
+    }
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    {
+      iter1_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter2_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter3_._bz_offsetData(offset1, dim1, offset2, dim2);
+    }
 
     int suggestStride(int rank) const
     {
@@ -1109,6 +1149,23 @@ public:
     iter4_._bz_offsetData(i);
   }
 
+    // and these are needed for stencil expression shift to work
+    void _bz_offsetData(size_t offset, int dim)
+    { 
+      iter1_._bz_offsetData(offset, dim);
+      iter2_._bz_offsetData(offset, dim);
+      iter3_._bz_offsetData(offset, dim);
+      iter4_._bz_offsetData(offset, dim);
+    }
+  
+    void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2)
+    {
+      iter1_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter2_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter3_._bz_offsetData(offset1, dim1, offset2, dim2);
+      iter4_._bz_offsetData(offset1, dim1, offset2, dim2);
+    }
+
     int suggestStride(int rank) const
     {
         int stride1 = iter1_.suggestStride(rank);
@@ -1251,6 +1308,11 @@ public:
 
   // this is needed for the stencil expression fastRead to work
   void _bz_offsetData(size_t i) {};
+
+    // and these are needed for stencil expression shift to work
+  void _bz_offsetData(size_t offset, int dim) {};
+  
+  void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2) {};
 
     int suggestStride(int) const
     { return 1; }
