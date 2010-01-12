@@ -27,10 +27,10 @@
 BZ_NAMESPACE(blitz)
 
 /* Stencils as currently implemented rely on being able to give an
-   iterator type to the operator. This means they won't work on
-   methods that do traversals of other types. In particular, they
-   can't take operands that include: reductions, index placeholders,
-   index reorderings. */
+   iterator type to the operator. Some methods have been implemented
+   to make index traversal work so that operands can include index
+   remappings, but it's probably not very efficient. Operands
+   containing reductions or index placeholders don't work. */
 
 // Utility function for shrinking the domain of the expression the
 // stencil operates on.
@@ -40,8 +40,8 @@ RectDomain<N_rank> _bz_shrinkDomain(const RectDomain<N_rank>& d,
 				    const TinyVector<int,N_rank>& maxb)
 {
   TinyVector<int, N_rank> lb(d.lbound()), ub(d.ubound());
-  lb -= minb;	
-  ub -= maxb;	
+  lb -= where(minb<0, minb, 0);
+  ub -= where(maxb>0, maxb, 0);
   return RectDomain<N_rank>(lb, ub);
 }
 

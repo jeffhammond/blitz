@@ -183,6 +183,9 @@ public:
     const T_numtype * restrict data() const
     { return data_; }
 
+  const Array<T_numtype, N_rank>& array() const
+  { return array_; }
+
     void _bz_setData(const T_numtype* ptr)
     { data_ = ptr; }
 

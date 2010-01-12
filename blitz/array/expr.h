@@ -156,12 +156,8 @@ public:
     T_numtype operator()(const TinyVector<int, N_rank>& i) { return iter_(i); }
 #endif
 
-  // experimental range operators forward operations
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(iter_(r0));
-  }
-  T_range_result operator()(RectDomain<rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(iter_(d));
   }
@@ -236,7 +232,8 @@ public:
     bool shapeCheck(const T_shape& shape)
     { return iter_.shapeCheck(shape); }
 
-    void moveTo(const TinyVector<int,_bz_ArrayExpr::rank>& i)
+    template<int N>
+    void moveTo(const TinyVector<int, N>& i)
     {
         iter_.moveTo(i);
     }
@@ -404,12 +401,8 @@ public:
     { return T_op::apply(iter_(i)); }
 #endif
 
-  // experimental range operators forward operations
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(iter_(r0));
-  }
-  T_range_result operator()(RectDomain<rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(iter_(d));
   }
@@ -447,7 +440,8 @@ public:
         iter_.advanceUnitStride();
     }
 
-    void moveTo(const TinyVector<int,_bz_ArrayExprUnaryOp::rank>& i)
+  template<int N>
+  void moveTo(const TinyVector<int,N>& i)
     {
         iter_.moveTo(i);
     }
@@ -553,12 +547,8 @@ public:
     T_numtype operator()(const TinyVector<int, N_rank>& i) { return T_op::apply(iter1_(i), iter2_(i)); }
 #endif
 
-  // experimental range operators forward operations
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(iter1_(r0), iter2_(r0));
-  }
-  T_range_result operator()(RectDomain<rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(iter1_(d), iter2_(d));
   }
@@ -673,7 +663,8 @@ public:
         return iter1_.isStride(rank,stride) && iter2_.isStride(rank,stride);
     }
 
-    void moveTo(const TinyVector<int,_bz_ArrayExprBinaryOp::rank>& i)
+  template<int N>
+  void moveTo(const TinyVector<int,N>& i)
     {
         iter1_.moveTo(i);
         iter2_.moveTo(i);
@@ -761,12 +752,8 @@ public:
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i)); }
 #endif
 
-  // experimental range operators forward operations
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(iter1_(r0), iter2_(r0), iter3_(r0));
-  }
-  T_range_result operator()(RectDomain<rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(iter1_(d), iter2_(d), iter3_(d));
   }
@@ -911,7 +898,8 @@ public:
             && iter3_.isStride(rank,stride);
     }
 
-    void moveTo(const TinyVector<int,_bz_ArrayExprTernaryOp::rank>& i)
+    template<int N>
+    void moveTo(const TinyVector<int,N>& i)
     {
         iter1_.moveTo(i);
         iter2_.moveTo(i);
@@ -1004,12 +992,8 @@ public:
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i), iter4_(i)); }
 #endif
 
-  // experimental range operators forward operations
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(iter1_(r0), iter2_(r0), iter3_(r0), iter4_(r0));
-  }
-  T_range_result operator()(RectDomain<rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<rank>& d) const
   {
     return T_range_result(iter1_(d), iter2_(d), iter3_(d), iter4_(d));
   }
@@ -1187,7 +1171,8 @@ public:
             && iter4_.isStride(rank,stride);
     }
 
-    void moveTo(const TinyVector<int,_bz_ArrayExprQuaternaryOp::rank>& i)
+    template<int N>
+    void moveTo(const TinyVector<int,N>& i)
     {
         iter1_.moveTo(i);
         iter2_.moveTo(i);
@@ -1274,13 +1259,8 @@ public:
     { return value_; }
 #endif
 
-  // experimental range operators forward operations
-  _bz_ArrayExprConstant& operator()(Range r0)
-  {
-    return *this;
-  }
   template<int N_rank>
-  const _bz_ArrayExprConstant& operator()(RectDomain<N_rank> d) const
+  const _bz_ArrayExprConstant& operator()(const RectDomain<N_rank>& d) const
   {
     return *this;
   }
