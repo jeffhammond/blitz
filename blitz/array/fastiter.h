@@ -36,6 +36,14 @@ BZ_NAMESPACE(blitz)
  #error <blitz/array/iter.h> must be included via <blitz/array.h>
 #endif
 
+// Wrapper to turn expressions with FAIs to FACIs so they can be
+// returned from a function.
+template<typename T>
+typename T::T_range_result safeToReturn(const T& expr) {
+  return expr(expr.domain());
+}
+
+
 // helper class ConstPointerStack
 template<typename P_numtype, int N_rank>
 class ConstPointerStack {
