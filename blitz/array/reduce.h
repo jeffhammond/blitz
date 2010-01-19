@@ -102,7 +102,7 @@ public:
     RectDomain<rank> domain() const { return iter_.domain(); }
 
     template<int N_destRank>
-    T_numtype operator()(const TinyVector<int, N_destRank>& destIndex)
+    T_numtype operator()(const TinyVector<int, N_destRank>& destIndex) const
     {
         BZPRECHECK(N_destRank == N_index,  
             "Array reduction performed over rank " << N_index 
@@ -163,9 +163,10 @@ public:
     T_numtype fastRead(int)   const { BZPRECONDITION(0); return T_numtype(); }
 
     // don't know how to define these, so stencil expressions won't work
-    T_numtype shift(int offset, int dim) { BZPRECONDITION(0); return T_numtype(); }
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
-      BZPRECONDITION(0); return T_numtype(); }
+    T_numtype shift(int offset, int dim) const
+  { BZPRECONDITION(0); return T_numtype(); }
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const 
+  { BZPRECONDITION(0); return T_numtype(); }
     void _bz_offsetData(size_t i) { BZPRECONDITION(0); }
 
   // Unclear how to define this, and stencils don't work anyway

@@ -105,10 +105,10 @@ public:
     { }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
-    T_numtype operator()(TinyVector<int, N_rank> i)
+    T_numtype operator()(TinyVector<int, N_rank> i) const
     { return array_(i); }
 #else
-    T_numtype operator()(const TinyVector<int, N_rank>& i)
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
     { return array_(i); }
 #endif
 
@@ -148,13 +148,13 @@ public:
 
     T_numtype first_value() const { return *data_; }
 
-    T_numtype operator*()
+    T_numtype operator*() const
     { return *data_; }
 
-    T_numtype operator[](int i)
+    T_numtype operator[](int i) const
     { return data_[i * stride_]; }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     { return data_[i]; }
 
     int suggestStride(int rank) const
@@ -250,24 +250,24 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     { return areShapesConformable(shape, array_.length()); }
 
 
     // Experimental
-    T_numtype& operator()(int i)
+    T_numtype& operator()(int i) const
     {
         return (T_numtype&)data_[i*array_.stride(0)];
     }
 
     // Experimental
-    T_numtype& operator()(int i, int j)
+    T_numtype& operator()(int i, int j) const
     {
         return (T_numtype&)data_[i*array_.stride(0) + j*array_.stride(1)];
     }
 
     // Experimental
-    T_numtype& operator()(int i, int j, int k)
+    T_numtype& operator()(int i, int j, int k) const
     {
         return (T_numtype&)data_[i*array_.stride(0) + j*array_.stride(1)
           + k*array_.stride(2)];
@@ -316,13 +316,13 @@ public:
     { return *data_; }
 
     // Experimental
-    T_numtype shift(int offset, int dim)
+    T_numtype shift(int offset, int dim) const
     {
         return data_[offset*array_.stride(dim)];
     }
 
     // Experimental
-    T_numtype shift(int offset1, int dim1, int offset2, int dim2)
+    T_numtype shift(int offset1, int dim1, int offset2, int dim2) const
     {
         return data_[offset1*array_.stride(dim1) 
             + offset2*array_.stride(dim2)];
@@ -372,11 +372,8 @@ public:
   
   using T_base::operator();
 
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(T_base::array_(r0));
-  }
-  T_range_result operator()(RectDomain<N_rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(T_base::array_(d));
   }
@@ -420,11 +417,8 @@ public:
   
   using T_base::operator();
 
-  T_range_result operator()(Range r0)
-  {
-    return T_range_result(T_base::array_(r0));
-  }
-  T_range_result operator()(RectDomain<N_rank> d) const
+  template<int N>
+  T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(T_base::array_(d));
   }

@@ -73,17 +73,17 @@ public:
     // you are trying to use stack iteration mode on an expression
     // which contains an index placeholder.  You must use index 
     // iteration mode instead.
-    int operator*() { 
+    int operator*() const { 
         BZPRECONDITION(0); 
         return 0;
     }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(TinyVector<int, N_rank> i) { return i[N]; }
+    T_numtype operator()(TinyVector<int, N_rank> i) const { return i[N]; }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i) { return i[N]; }
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const { return i[N]; }
 #endif
 
     int ascending(int) const { return INT_MIN; }
@@ -119,12 +119,12 @@ public:
         return false; 
     }
 
-    T_numtype operator[](int) {
+    T_numtype operator[](int) const {
         BZPRECONDITION(0);
         return T_numtype();
     }
 
-    T_numtype fastRead(int) {
+    T_numtype fastRead(int) const {
         BZPRECONDITION(0);
         return T_numtype();
     }
@@ -141,8 +141,9 @@ public:
 
   // don't know how to define shift, as it relies on having an
   // implicit position. thus stencils won't work
-  T_numtype shift(int offset, int dim) { BZPRECONDITION(0); return T_numtype(); }
-  T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
+  T_numtype shift(int offset, int dim) const
+  { BZPRECONDITION(0); return T_numtype(); }
+  T_numtype shift(int offset1, int dim1,int offset2, int dim2) const {
     BZPRECONDITION(0); return T_numtype(); }
   void _bz_offsetData(size_t i) { BZPRECONDITION(0); }
 

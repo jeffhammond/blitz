@@ -389,7 +389,7 @@ public:
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_inputRank>
-    T_numtype operator()(TinyVector<int, N_inputRank> i)
+    T_numtype operator()(TinyVector<int, N_inputRank> i) const
     {
       return _bz_doArrayIndexMapping<exprRank>::map(iter_.array(), i,
             N_map0, N_map1, N_map2, N_map3, N_map4, N_map5, N_map6,
@@ -397,7 +397,7 @@ public:
     }
 #else
     template<int N_inputRank>
-    T_numtype operator()(const TinyVector<int, N_inputRank>& i)
+    T_numtype operator()(const TinyVector<int, N_inputRank>& i) const
     {
       return _bz_doArrayIndexMapping<exprRank>::map(iter_.array(), i,
             N_map0, N_map1, N_map2, N_map3, N_map4, N_map5, N_map6,
@@ -493,7 +493,7 @@ public:
     // which contains an index placeholder.  You must use index
     // iteration mode instead.
   // (no -- added to support stencils /PJ)
-    T_numtype operator*()
+    T_numtype operator*() const
     {
       return *iter_;
     }
@@ -548,7 +548,7 @@ public:
         return T_numtype();
     }
 
-    T_numtype fastRead(int)
+    T_numtype fastRead(int) const
     {
         BZPRECONDITION(0);
         return T_numtype();
@@ -580,7 +580,7 @@ public:
     }
 #endif
 
-  T_numtype shift(int offset, int dim) { 
+  T_numtype shift(int offset, int dim) const { 
     // need to check if dim is mapped into this expression
     const int d=map_dim(dim);
     if (d<0)
@@ -589,7 +589,7 @@ public:
       return iter_.shift(offset, d);
   }
 
-  T_numtype shift(int offset1, int dim1,int offset2, int dim2) {
+  T_numtype shift(int offset1, int dim1,int offset2, int dim2) const {
     // need to check if dims are mapped into this expression
     int d1=map_dim(dim1);
     int d2=map_dim(dim2);

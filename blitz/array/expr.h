@@ -144,16 +144,16 @@ public:
         : iter_(exprpair.first(), exprpair.second())
     { }
 
-    T_numtype operator*() { return *iter_; }
+    T_numtype operator*() const { return *iter_; }
 
     T_numtype first_value() const { return iter_(iter_.lbound()); }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank> i) { return iter_(i); }
+    T_numtype operator()(const TinyVector<int, N_rank> i) const { return iter_(i); }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i) { return iter_(i); }
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const { return iter_(i); }
 #endif
 
   template<int N>
@@ -198,7 +198,7 @@ public:
     T_numtype operator[](int i) const
     { return iter_[i]; }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     { return iter_.fastRead(i); }
 
     // this is needed for the stencil expression fastRead to work
@@ -229,7 +229,7 @@ public:
     { iter_.prettyPrint(str, format); }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     { return iter_.shapeCheck(shape); }
 
     template<int N>
@@ -238,12 +238,12 @@ public:
         iter_.moveTo(i);
     }
 
-    T_numtype shift(int offset, int dim)
+    T_numtype shift(int offset, int dim) const
     {
       return iter_.shift(offset, dim);
     }
 
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2)
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const
     {
       return iter_.shift(offset1, dim1, offset2, dim2);
     }
@@ -387,17 +387,17 @@ public:
     int ubound(const int rank)    const { return iter_.ubound(rank);    }
     RectDomain<rank> domain() const { return iter_.domain(); }
 
-    T_numtype operator*() { return T_op::apply(*iter_); }
+    T_numtype operator*() const { return T_op::apply(*iter_); }
 
     T_numtype first_value() const { return iter_(iter_.lbound()); }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank> i)
+    T_numtype operator()(const TinyVector<int, N_rank> i) const
     { return T_op::apply(iter_(i)); }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i)
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
     { return T_op::apply(iter_(i)); }
 #endif
 
@@ -446,12 +446,12 @@ public:
         iter_.moveTo(i);
     }
 
-    T_numtype shift(int offset, int dim)
+    T_numtype shift(int offset, int dim) const
     {
       return T_op::apply(iter_.shift(offset, dim));
     }
 
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2)
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const
     {
       return T_op::apply(iter_.shift(offset1, dim1, offset2, dim2));
     }
@@ -462,10 +462,10 @@ public:
         return iter_.canCollapse(outerLoopRank, innerLoopRank); 
     }
 
-    T_numtype operator[](int i)
+    T_numtype operator[](int i) const
     { return T_op::apply(iter_[i]); }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     { return T_op::apply(iter_.fastRead(i)); }
 
   // this is needed for the stencil expression fastRead to work
@@ -492,7 +492,7 @@ public:
     { T_op::prettyPrint(str, format, iter_); }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     { return iter_.shapeCheck(shape); }
 
 protected:
@@ -536,15 +536,17 @@ public:
         : iter1_(a), iter2_(b)
     { }
 
-    T_numtype operator*()
+    T_numtype operator*() const
     { return T_op::apply(*iter1_, *iter2_); }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank> i) { return T_op::apply(iter1_(i), iter2_(i)); }
+    T_numtype operator()(const TinyVector<int, N_rank> i) const
+  { return T_op::apply(iter1_(i), iter2_(i)); }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i) { return T_op::apply(iter1_(i), iter2_(i)); }
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
+  { return T_op::apply(iter1_(i), iter2_(i)); }
 #endif
 
   template<int N>
@@ -625,10 +627,10 @@ public:
             && iter2_.canCollapse(outerLoopRank, innerLoopRank);
     } 
 
-    T_numtype operator[](int i)
+    T_numtype operator[](int i) const
     { return T_op::apply(iter1_[i], iter2_[i]); }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     { return T_op::apply(iter1_.fastRead(i), iter2_.fastRead(i)); }
 
     // this is needed for the stencil expression fastRead to work
@@ -670,12 +672,12 @@ public:
         iter2_.moveTo(i);
     }
 
-    T_numtype shift(int offset, int dim)
+    T_numtype shift(int offset, int dim) const
     {
       return T_op::apply(iter1_.shift(offset, dim),iter2_.shift(offset, dim));
     }
 
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2)
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const
     {
       return T_op::apply(iter1_.shift(offset1, dim1, offset2, dim2),
 			 iter2_.shift(offset1, dim1, offset2, dim2));
@@ -688,7 +690,7 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     { return iter1_.shapeCheck(shape) && iter2_.shapeCheck(shape); }
 
 protected:
@@ -739,16 +741,16 @@ public:
         : iter1_(a), iter2_(b), iter3_(c)
     { }
 
-    T_numtype operator*()
+    T_numtype operator*() const
     { return T_op::apply(*iter1_, *iter2_, *iter3_); }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank> i)
+    T_numtype operator()(const TinyVector<int, N_rank> i) const
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i)); }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i)
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i)); }
 #endif
 
@@ -849,10 +851,10 @@ public:
             && iter3_.canCollapse(outerLoopRank, innerLoopRank);
     } 
 
-    T_numtype operator[](int i)
+    T_numtype operator[](int i) const
     { return T_op::apply(iter1_[i], iter2_[i], iter3_[i]); }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     {
         return T_op::apply(iter1_.fastRead(i),
                            iter2_.fastRead(i),
@@ -913,7 +915,7 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     {
         return iter1_.shapeCheck(shape)
             && iter2_.shapeCheck(shape)
@@ -979,16 +981,16 @@ public:
         : iter1_(a), iter2_(b), iter3_(c), iter4_(d)
     { }
 
-    T_numtype operator*()
+    T_numtype operator*() const
     { return T_op::apply(*iter1_, *iter2_, *iter3_, *iter4_); }
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank> i)
+    T_numtype operator()(const TinyVector<int, N_rank> i) const
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i), iter4_(i)); }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i)
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
     { return T_op::apply(iter1_(i), iter2_(i), iter3_(i), iter4_(i)); }
 #endif
 
@@ -1116,7 +1118,7 @@ public:
     T_numtype operator[](int i)
     { return T_op::apply(iter1_[i], iter2_[i], iter3_[i], iter4_[i]); }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     {
         return T_op::apply(iter1_.fastRead(i),
                            iter2_.fastRead(i),
@@ -1187,7 +1189,7 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     {
         return iter1_.shapeCheck(shape)
             && iter2_.shapeCheck(shape)
@@ -1251,11 +1253,11 @@ public:
 
 #ifdef BZ_ARRAY_EXPR_PASS_INDEX_BY_VALUE
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int,N_rank>)
+    T_numtype operator()(const TinyVector<int,N_rank>) const
     { return value_; }
 #else
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int,N_rank>&)
+    T_numtype operator()(const TinyVector<int,N_rank>&) const
     { return value_; }
 #endif
 
@@ -1280,19 +1282,19 @@ public:
     bool canCollapse(int,int) const 
     { return true; }
 
-    T_numtype operator[](int)
+    T_numtype operator[](int) const
     { return value_; }
 
-    T_numtype fastRead(int)
+    T_numtype fastRead(int) const
     { return value_; }
 
   // this is needed for the stencil expression fastRead to work
-  void _bz_offsetData(size_t i) {};
+  void _bz_offsetData(size_t i) const{};
 
     // and these are needed for stencil expression shift to work
-  void _bz_offsetData(size_t offset, int dim) {};
+  void _bz_offsetData(size_t offset, int dim) const {};
   
-  void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2) {};
+  void _bz_offsetData(size_t offset1, int dim1, size_t offset2, int dim2) const {};
 
     int suggestStride(int) const
     { return 1; }
@@ -1300,14 +1302,15 @@ public:
     bool isStride(int,int) const
     { return true; }
 
-    void moveTo(int) { }
+    void moveTo(int) const { }
 
-    T_numtype shift(int offset, int dim) {return value_;}
+    T_numtype shift(int offset, int dim) const {return value_;}
 
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2) { return value_;}
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const 
+  { return value_;}
 
     template<int N_rank>
-    void moveTo(const TinyVector<int,N_rank>&) { }
+    void moveTo(const TinyVector<int,N_rank>&) const { }
 
     void prettyPrint(BZ_STD_SCOPE(string) &str, 
         prettyPrintFormat& format) const
@@ -1319,7 +1322,7 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape&)
+    bool shapeCheck(const T_shape&) const
     { return true; }
 
 protected:

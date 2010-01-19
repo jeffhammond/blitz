@@ -66,11 +66,11 @@ public:
       : iter1_(a), iter2_(b), iter3_(c)
     { }
 
-    T_numtype operator*()
+    T_numtype operator*() const
     { return (*iter1_) ? (*iter2_) : (*iter3_); }
 
     template<int N_rank>
-    T_numtype operator()(const TinyVector<int, N_rank>& i)
+    T_numtype operator()(const TinyVector<int, N_rank>& i) const
     { return iter1_(i) ? iter2_(i) : iter3_(i); }
 
     T_range_result operator()(const RectDomain<rank>& d) const
@@ -178,24 +178,24 @@ public:
         iter3_.moveTo(i);
     }
 
-    T_numtype shift(int offset, int dim)
+    T_numtype shift(int offset, int dim) const
     {
       return iter1_.shift(offset, dim) ? 
 	iter2_.shift(offset, dim) : 
 	iter3_.shift(offset, dim);
     }
 
-    T_numtype shift(int offset1, int dim1,int offset2, int dim2)
+    T_numtype shift(int offset1, int dim1,int offset2, int dim2) const
     {
       return iter1_.shift(offset1, dim1, offset2, dim2) ? 
 	iter2_.shift(offset1, dim1, offset2, dim2) : 
 	iter3_.shift(offset1, dim1, offset2, dim2);
     }
 
-    T_numtype operator[](int i)
+    T_numtype operator[](int i) const
     { return iter1_[i] ? iter2_[i] : iter3_[i]; }
 
-    T_numtype fastRead(int i)
+    T_numtype fastRead(int i) const
     { return iter1_.fastRead(i) ? iter2_.fastRead(i) : iter3_.fastRead(i); }
 
   // this is needed for the stencil expression fastRead to work
@@ -235,7 +235,7 @@ public:
     }
 
     template<typename T_shape>
-    bool shapeCheck(const T_shape& shape)
+    bool shapeCheck(const T_shape& shape) const
     { 
         int t1 = iter1_.shapeCheck(shape);
         int t2 = iter2_.shapeCheck(shape);
