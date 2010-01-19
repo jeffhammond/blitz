@@ -24,13 +24,13 @@ typedef Array<TinyMatrix<double, 3, 3>, 3> array_3m;
 // test with functors
 class doubler {
 public:
-  double operator()(double x) {return 2.0*x;}
+  double operator()(double x) const {return 2.0*x;}
   BZ_DECLARE_FUNCTOR(doubler);
 };
 
 class multiplier {
 public:
-  double operator()(double a, double b) {return a*b;}
+  double operator()(double a, double b) const {return a*b;}
   BZ_DECLARE_FUNCTOR2(multiplier);
 };
 
@@ -110,7 +110,8 @@ int main()
 	    Laplacian2D(1.0*Laplacian2D(field2)));
   test_expr(Laplacian2D(Laplacian2D(field2+field2)), 
 	    Laplacian2D(Laplacian2D(field2)+Laplacian2D(field2)));
-  
+  test_expr(Laplacian2D(field3), Laplacian2D(1.0*field3));
+
   // and some more complicated expressions and assignments
   result2(_bz_shrinkDomain(result2.domain(),shape(-1,-1),shape(1,1))) =
     Laplacian2D(where(field2>0.5,0.,1.));
@@ -125,6 +126,18 @@ int main()
   test_expr(Laplacian2D(2.0*field2), Laplacian2D(doubleit(field2)));
   test_expr(Laplacian2D(field2*field3(0,Range(0,sz-1), Range(1,sz+1))), 
 	    Laplacian2D(multiplyit(field2, field3(0,Range(0,sz-1), Range(1,sz+1)))));
+
+  // reductions of stencil results
+  {
+    array_2 temp(Laplacian2D(field2));
+    BZTEST(sum(temp) == sum(Laplacian2D(field2)));
+    test_expr(sum(temp, tensor::j), sum(Laplacian2D(field2), tensor::j));
+  }
+  {
+    array_3 temp(Laplacian2D(field3));
+    BZTEST(sum(temp) == sum(Laplacian2D(field3)));
+    test_expr(sum(temp, tensor::k), sum(Laplacian2D(field3), tensor::k));
+  }
 
   // and expressions involving index remappings. we do these on arrays
   // with different sizes in all dimensions to make it less likely we
