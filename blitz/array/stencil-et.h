@@ -26,7 +26,6 @@
 
 BZ_NAMESPACE(blitz)
 
-
 /* Stencils as currently implemented rely on being able to give an
    iterator type to the operator. Some methods have been implemented
    to make index traversal work so that operands can include index
@@ -50,6 +49,20 @@ RectDomain<N_rank> _bz_shrinkDomain(const RectDomain<N_rank>& d,
   }
   return RectDomain<N_rank>(lb, ub);
 }
+
+
+// Helper function that converts slices to unit ranges
+template<typename T>
+Range _bz_makeRange(const T& r)
+{
+  return Range(r);
+}
+
+nilArraySection _bz_makeRange(const nilArraySection& r)
+{
+  return r;
+}
+
 
 // necessary because we can't have an #ifdef in the macros
 template<typename T> struct _bz_IndexParameter {
@@ -395,11 +408,12 @@ class _bz_StencilExpr2 {
 									\
     /* this is not really const, because we don't undo the moveTo, but	\
        that should not be visible to outside. It would be if we used	\
-       some kind of mixed index and stack traversal, but then it will	\
+       some kind of mixed index and stack traversal, but that will	\
        screw things up, const or not. */				\
-    T_numtype operator()(_bz_typename _bz_IndexParameter<TinyVector<int, rank> >::type i)  const\
+    template<int N_rank2>						\
+      T_numtype operator()(const TinyVector<int, N_rank2>& i) const	\
     { iter_.moveTo(i); return name(iter_); }				\
-									\
+    									\
     T_range_result operator()(const RectDomain<rank>& d) const		\
     { return T_range_result(iter_(d)); }				\
 									\
@@ -438,6 +452,41 @@ class _bz_StencilExpr2 {
       iter_.prettyPrint(str, format);					\
       str += ")";							\
     }									\
+    									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr, T_numtype> T_slice;			\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+    /* because stencils work inherently in several dimensions it's	\
+       complicated to slice the domain. slices will be changed to unit	\
+       \ ranges instead. slicing stencil result thus *never* changes	\
+       the rank of the expression, unlike the normal case. */		\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)));					\
+    }									\
+									\
   };									\
   /* generate an ET object from an expression */			\
   template<typename T1>							\
@@ -456,7 +505,7 @@ class _bz_StencilExpr2 {
   template<typename T, int N>						\
   inline _bz_ArrayExpr<name ## _et<typename BZ_BLITZ_SCOPE(asExpr)<Array<T,N> >::T_expr::T_range_result, result> > \
   name(Array<T,N>& d1)							\
-  { return name(d1.wrap()); }						\
+  { return name(d1.wrap()); }
   
 
 /* Defines a stencil ET that operates on two arrays of arbitrary type
@@ -545,6 +594,36 @@ class _bz_StencilExpr2 {
       str += ", ";							\
       iter2_.prettyPrint(str, format);					\
       str += ")";							\
+    }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et2<T_expr1, T_expr2, T_numtype> T_slice;	\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et2							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et2						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)));					\
     }									\
   };									\
 									\
@@ -676,6 +755,36 @@ class _bz_StencilExpr2 {
        iter_.prettyPrint(str, format);					\
        str += ")";							\
      }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)));					\
+    }									\
    };									\
    /* create ET from application to expression */			\
    template<typename T1>						\
@@ -760,6 +869,36 @@ class _bz_StencilExpr2 {
        iter_.prettyPrint(str, format);					\
        str += ")";							\
      }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)));					\
+    }									\
    };									\
   /* create ET from application to expression */				\
    template<typename T1>							\
@@ -844,6 +983,36 @@ class _bz_StencilExpr2 {
       str += "(";							\
       iter_.prettyPrint(str, format);					\
       str += ")";							\
+    }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)));					\
     }									\
   };									\
   /* create ET from application to expression */			\
@@ -932,6 +1101,36 @@ class _bz_StencilExpr2 {
       str += "(";							\
       iter_.prettyPrint(str, format);					\
       str += ")";							\
+    }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)),dim_);				\
     }									\
 									\
   private:								\
@@ -1032,6 +1231,36 @@ class _bz_StencilExpr2 {
       str += "(";							\
       iter_.prettyPrint(str, format);					\
       str += ")";							\
+    }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et_multi<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et_multi							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et_multi						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)),comp_, dim_);			\
     }									\
 									\
   private:								\
@@ -1137,6 +1366,36 @@ class _bz_StencilExpr2 {
       str += "(";							\
       iter_.prettyPrint(str, format);					\
       str += ")";							\
+    }									\
+									\
+    template<typename T1, typename T2 = nilArraySection,		\
+      class T3 = nilArraySection, typename T4 = nilArraySection,	\
+      class T5 = nilArraySection, typename T6 = nilArraySection,	\
+      class T7 = nilArraySection, typename T8 = nilArraySection,	\
+      class T9 = nilArraySection, typename T10 = nilArraySection,	\
+      class T11 = nilArraySection>					\
+      class SliceInfo {							\
+      public:								\
+      typedef name ## _et<T_expr> T_slice;				\
+      };								\
+    									\
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, \
+      typename T7, typename T8, typename T9, typename T10, typename T11> \
+      name ## _et							\
+      operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const \
+    {									\
+      return name ## _et						\
+	(iter_(_bz_makeRange(r1),					\
+	       _bz_makeRange(r2),					\
+	       _bz_makeRange(r3),					\
+	       _bz_makeRange(r4),					\
+	       _bz_makeRange(r5),					\
+	       _bz_makeRange(r6),					\
+	       _bz_makeRange(r7),					\
+	       _bz_makeRange(r8),					\
+	       _bz_makeRange(r9),					\
+	       _bz_makeRange(r10),					\
+	       _bz_makeRange(r11)), dim1_, dim2_);			\
     }									\
    									\
 private:								\

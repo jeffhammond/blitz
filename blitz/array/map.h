@@ -623,6 +623,34 @@ public:
         return true; 
     }
 
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef ArrayIndexMapping<T_slice1, N_map0, N_map1, N_map2,
+			      N_map3, N_map4, N_map5, N_map6, N_map7, 
+			      N_map8, N_map9, N_map10> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      /* Slicing for remapped expressions doesn't work. Because of the
+	 potential different types (Range vs int) in the expression,
+	 it would be very awkward to implement. As far as I can see,
+	 it would require manual coding of the 3^11 calling
+	 possibilities. /PJ */
+      BZPRECONDITION(0);
+    }
+
 private:
     ArrayIndexMapping() : iter_( Array<T_numtype, exprRank>() ) { }
 

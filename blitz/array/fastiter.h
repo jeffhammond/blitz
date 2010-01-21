@@ -36,6 +36,8 @@ BZ_NAMESPACE(blitz)
  #error <blitz/array/iter.h> must be included via <blitz/array.h>
 #endif
 
+#include <blitz/array/slice.h>
+
 // Wrapper to turn expressions with FAIs to FACIs so they can be
 // returned from a function.
 template<typename T>
@@ -65,6 +67,12 @@ private:
     const T_numtype *                stack_[N_rank];
 };
 
+
+// forward declaration
+template<typename, int> class FastArrayIterator;
+template<typename, int> class FastArrayCopyIterator;
+
+
 template<typename P_numtype, int N_rank, typename P_arraytype>
 class FastArrayIteratorBase {
 public:
@@ -73,6 +81,7 @@ public:
   typedef FastArrayIteratorBase<P_numtype, N_rank, P_arraytype> T_iterator;
     typedef const T_array& T_ctorArg1;
     typedef int            T_ctorArg2;    // dummy
+  typedef FastArrayCopyIterator<P_numtype, N_rank> T_range_result;
 
     static const int 
         numArrayOperands = 1, 
@@ -290,7 +299,8 @@ public:
         data_ = &const_cast<T_array&>(array_)(i,j,k);
     }
 
-    void moveTo(const TinyVector<int,N_rank>& i)
+    template<int N_rank2>
+    void moveTo(const TinyVector<int,N_rank2>& i)
     {
         data_ = &const_cast<T_array&>(array_)(i);
     }
@@ -328,6 +338,18 @@ public:
             + offset2*array_.stride(dim2)];
     }
 
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:    
+    typedef FastArrayCopyIterator<T_numtype, blitz::SliceInfo<T_numtype, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::rank> T_slice;
+};
+
 protected:
   const T_numtype * restrict           data_;
   P_arraytype                          array_;
@@ -345,13 +367,13 @@ class FastArrayIterator :
 public:
   typedef FastArrayIteratorBase<P_numtype, N_rank, 
 				const Array<P_numtype, N_rank>&> T_base;
-  typedef FastArrayCopyIterator<P_numtype, N_rank> T_range_result;
   typedef typename T_base::T_numtype T_numtype;
   typedef typename T_base::T_array T_array;
   typedef typename T_base::T_iterator T_iterator;
   typedef typename T_base::T_ctorArg1 T_ctorArg1;
   typedef typename T_base::T_ctorArg2 T_ctorArg2;
-
+  typedef typename T_base::T_range_result T_range_result;
+  
   using T_base::rank;
   using T_base::numArrayOperands;
   using T_base::numIndexPlaceholders;
@@ -377,11 +399,22 @@ public:
   {
     return T_range_result(T_base::array_(d));
   }
+
+  template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+	   typename T7, typename T8, typename T9, typename T10, typename T11>
+  FastArrayCopyIterator<T_numtype, T_base::template SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice::rank>
+  operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+  {
+    typedef FastArrayCopyIterator<T_numtype, T_base::template SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice::rank> slice;
+
+    return slice(array_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
+  }
+  
 };
 
 /* This version of the FastArrayIterator makes a COPY of the array
    it's pointing to. This makes it possible to return expressions of
-   arrays that have gone out of scope. */
+   arrays that have gone out of scope, or to slice expressions. */
 template<typename P_numtype, int N_rank>
 class FastArrayCopyIterator : 
   public FastArrayIteratorBase<P_numtype, N_rank, const Array<P_numtype, N_rank> >
@@ -389,12 +422,12 @@ class FastArrayCopyIterator :
 public:
   typedef FastArrayIteratorBase<P_numtype, N_rank, 
 				const Array<P_numtype, N_rank> > T_base;
-  typedef FastArrayCopyIterator<P_numtype, N_rank> T_range_result;
   typedef typename T_base::T_numtype T_numtype;
   typedef typename T_base::T_array T_array;
   typedef typename T_base::T_iterator T_iterator;
   typedef typename T_base::T_ctorArg1 T_ctorArg1;
   typedef typename T_base::T_ctorArg2 T_ctorArg2;
+  typedef typename T_base::T_range_result T_range_result;
 
   using T_base::rank;
   using T_base::numArrayOperands;
@@ -421,6 +454,16 @@ public:
   T_range_result operator()(const RectDomain<N>& d) const
   {
     return T_range_result(T_base::array_(d));
+  }
+
+  template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+	   typename T7, typename T8, typename T9, typename T10, typename T11>
+  FastArrayCopyIterator<T_numtype, T_base::template SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice::rank>
+  operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+  {
+    typedef FastArrayCopyIterator<T_numtype, T_base::template SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice::rank> slice;
+
+    return slice(array_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
   }
 };
 

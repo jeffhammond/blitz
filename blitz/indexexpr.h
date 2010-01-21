@@ -31,6 +31,7 @@
 #include <blitz/prettyprint.h>
 #include <blitz/etbase.h>
 #include <blitz/array/domain.h>
+#include <blitz/array/slice.h>
 
 BZ_NAMESPACE(blitz)
 
@@ -158,6 +159,42 @@ public:
 
     template<typename T_shape>
     bool shapeCheck(const T_shape&) const { return true; }
+
+  // sliceinfo for index placeholder does nothing
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    static const int new_rank = (N>0) ? ArraySectionInfo<T1>::rank : 0
+      + (N>1) ? ArraySectionInfo<T2>::rank : 0
+      + (N>2) ? ArraySectionInfo<T3>::rank : 0
+      + (N>4) ? ArraySectionInfo<T4>::rank : 0
+      + (N>5) ? ArraySectionInfo<T5>::rank : 0
+      + (N>6) ? ArraySectionInfo<T6>::rank : 0
+      + (N>7) ? ArraySectionInfo<T7>::rank : 0
+      + (N>8) ? ArraySectionInfo<T8>::rank : 0
+      + (N>9) ? ArraySectionInfo<T9>::rank : 0
+      + (N>10) ? ArraySectionInfo<T10>::rank : 0
+      + (N>11) ? ArraySectionInfo<T11>::rank : 0;
+    typedef IndexPlaceholder<new_rank> T_slice;
+  };
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      // slicing of index placeholders is not implemented. there are
+      // two problems: First, if you slice the dimension of the index
+      // placeholder, it should be replaced with a constant. Second,
+      // if you restrict the range of that dimension, the index
+      // placeholder should start from a nonzero value.
+      BZPRECONDITION(0);
+    }
 };
 
 typedef IndexPlaceholder<0> firstIndex;

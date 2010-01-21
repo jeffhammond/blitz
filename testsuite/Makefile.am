@@ -13,7 +13,7 @@ LDADD = -L$(top_builddir)/lib -lblitz
 EXTRA_PROGRAMS = Adnene-Ben-Abdallah-1 Adnene-Ben-Abdallah-2		\
 arrayresize chris-jeffery-1 chris-jeffery-2 chris-jeffery-3		\
 complex-test constarray contiguous copy ctors derrick-bass-1		\
-derrick-bass-3 exprctor extract free gary-huber-1 initialize interlace	\
+derrick-bass-3 exprctor expression-slicing extract free gary-huber-1 initialize interlace	\
 iter Josef-Wagenhuber loop1 matthias-troyer-1 matthias-troyer-2		\
 mattias-lindstroem-1 minmax minsumpow module newet Olaf-Ronneberger-1	\
 patrik-jonsson-1 peter-bienstman-1 peter-bienstman-2 peter-bienstman-3	\
@@ -37,6 +37,7 @@ ctors_SOURCES = ctors.cpp
 derrick_bass_1_SOURCES = derrick-bass-1.cpp
 derrick_bass_3_SOURCES = derrick-bass-3.cpp
 exprctor_SOURCES = exprctor.cpp
+expression_slicing_SOURCES = expression-slicing.cpp
 extract_SOURCES = extract.cpp
 free_SOURCES = free.cpp
 gary_huber_1_SOURCES = gary-huber-1.cpp

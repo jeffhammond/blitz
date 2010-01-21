@@ -188,6 +188,30 @@ public:
         return true; 
     }
 
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef _bz_ArrayExprReduce<T_slice1, N_index, T_reduction> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      // for slicing reduction results, we would need to set the
+      // dimension reduced over to Range::all(). That's not easy to do
+      // because it requires us to change the type of one of the rn's.
+      BZPRECONDITION(0);
+    }
+
 private: 
     _bz_ArrayExprReduce() { }
 // method for properly initializing the ordering values

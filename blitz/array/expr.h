@@ -248,6 +248,200 @@ public:
       return iter_.shift(offset1, dim1, offset2, dim2);
     }
 
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_subexpr;
+    typedef _bz_ArrayExpr<T_subexpr> T_slice;
+};
+
+  // slicing (experimental)
+
+  // because _bz_ArrayExpr is the "top-level" expression class, it has
+  // the burden of supplying enough variants of the operator to make
+  // it user-friendly. Hence the large numbers that follow
+  template<typename T1>
+  typename SliceInfo<T1>::T_slice
+  operator()(T1 r1) const
+  {
+    return typename SliceInfo<T1>::T_slice
+      (iter_
+       (r1, 
+	nilArraySection(), nilArraySection(), nilArraySection(), nilArraySection(),
+	nilArraySection(), nilArraySection(), nilArraySection(),
+	nilArraySection(), nilArraySection(), nilArraySection()));
+  }
+
+  template<typename T1, typename T2>
+  typename SliceInfo<T1,T2>::T_slice
+  operator()(T1 r1, T2 r2) const
+  {
+    typedef typename SliceInfo<T1,T2>::T_slice slice;
+    return slice(iter_
+		 (r1, r2, nilArraySection(), nilArraySection(), nilArraySection(),
+		  nilArraySection(), nilArraySection(), nilArraySection(),
+		  nilArraySection(), nilArraySection(), nilArraySection()));
+  }
+
+
+    template<typename T1, typename T2, typename T3>
+    typename SliceInfo<T1,T2,T3>::T_slice 
+    operator()(T1 r1, T2 r2, T3 r3) const
+    {
+        typedef typename SliceInfo<T1,T2,T3>::T_slice slice;
+        return slice(iter_(r1, r2, r3, nilArraySection(), nilArraySection(), 
+			   nilArraySection(), nilArraySection(), nilArraySection(), 
+			   nilArraySection(), nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4>
+    typename SliceInfo<T1,T2,T3,T4>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, nilArraySection(), nilArraySection(),
+			   nilArraySection(), nilArraySection(), nilArraySection(),
+			   nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5>
+    typename SliceInfo<T1,T2,T3,T4,T5>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, nilArraySection(),
+			   nilArraySection(), nilArraySection(), nilArraySection(),
+			   nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, nilArraySection(), 
+			   nilArraySection(), nilArraySection(),
+			   nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6,T7>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, r7, 
+			   nilArraySection(), nilArraySection(),
+			   nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, r7, r8,
+			   nilArraySection(), nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, r7, r8, r9, 
+			   nilArraySection(), nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, 
+			   nilArraySection()));
+    }
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+        typedef typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice slice;
+        return slice(iter_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
+    }
+
+  // now complete slicings to a scalar, which can't be expressed with the above
+  // unlike for arrays, these expressions are rvalues so we return by value
+    T_numtype operator()(int i0) const
+    { 
+	return iter_(TinyVector<int, 1>(i0));
+    }
+
+  T_numtype operator()(int i0, int i1) const
+    { 
+	return iter_(TinyVector<int, 2>(i0, i1));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2) const
+    { 
+      return iter_(TinyVector<int, 3>(i0, i1, i2));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3) const
+    { 
+      return iter_(TinyVector<int, 4>(i0, i1, i2, i3));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4) const
+    { 
+      return iter_(TinyVector<int, 5>(i0, i1, i2, i3, i4));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5) const
+    { 
+      return iter_(TinyVector<int, 6>(i0, i1, i2, i3, i4, i5));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5,
+		       int i6) const
+    { 
+      return iter_(TinyVector<int, 7>(i0, i1, i2, i3, i4, i5, i6));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5,
+		       int i6, int i7) const
+    { 
+      return iter_(TinyVector<int, 8>(i0, i1, i2, i3, i4, i5, i6, i7));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5,
+		       int i6, int i7, int i8) const
+    { 
+      return iter_(TinyVector<int, 9>(i0, i1, i2, i3, i4, i5, i6, i7, i8));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5,
+		       int i6, int i7, int i8, int i9) const
+    { 
+      return iter_(TinyVector<int, 10>(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9));
+    }
+
+  T_numtype operator()(int i0, int i1, int i2, int i3, int i4, int i5,
+		       int i6, int i7, int i8, int i9, int i10) const
+    { 
+      return iter_(TinyVector<int, 11>(i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10));
+    }
+
 protected:
     _bz_ArrayExpr() { }
 
@@ -495,6 +689,29 @@ public:
     bool shapeCheck(const T_shape& shape) const
     { return iter_.shapeCheck(shape); }
 
+
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef _bz_ArrayExprUnaryOp<T_slice1, T_op> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      return typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+	(iter_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
+    }
+
 protected:
     _bz_ArrayExprUnaryOp() { }
 
@@ -692,6 +909,31 @@ public:
     template<typename T_shape>
     bool shapeCheck(const T_shape& shape) const
     { return iter1_.shapeCheck(shape) && iter2_.shapeCheck(shape); }
+
+
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr1::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef typename T_expr2::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice2;
+    typedef _bz_ArrayExprBinaryOp<T_slice1, T_slice2, T_op> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      return typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+	(iter1_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter2_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
+    }
 
 protected:
     _bz_ArrayExprBinaryOp() { }
@@ -920,6 +1162,33 @@ public:
         return iter1_.shapeCheck(shape)
             && iter2_.shapeCheck(shape)
             && iter3_.shapeCheck(shape);
+    }
+
+
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr1::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef typename T_expr2::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice2;
+    typedef typename T_expr3::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice3;
+    typedef _bz_ArrayExprTernaryOp<T_slice1, T_slice2, T_slice3, T_op> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      return typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+	(iter1_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter2_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter3_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
     }
 
 protected:
@@ -1197,6 +1466,35 @@ public:
             && iter4_.shapeCheck(shape);
     }
 
+
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef typename T_expr1::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice1;
+    typedef typename T_expr2::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice2;
+    typedef typename T_expr3::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice3;
+    typedef typename T_expr4::template SliceInfo<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::T_slice T_slice4;
+    typedef _bz_ArrayExprQuaternaryOp<T_slice1, T_slice2, T_slice3, T_slice4, T_op> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      return typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+	(iter1_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter2_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter3_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11),
+	 iter4_(r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11));
+    }
+
 protected:
     _bz_ArrayExprQuaternaryOp() { }
 
@@ -1324,6 +1622,27 @@ public:
     template<typename T_shape>
     bool shapeCheck(const T_shape&) const
     { return true; }
+
+
+  // sliceinfo for expressions
+  template<typename T1, typename T2 = nilArraySection, 
+	   class T3 = nilArraySection, typename T4 = nilArraySection, 
+	   class T5 = nilArraySection, typename T6 = nilArraySection, 
+	   class T7 = nilArraySection, typename T8 = nilArraySection, 
+	   class T9 = nilArraySection, typename T10 = nilArraySection, 
+	   class T11 = nilArraySection>
+  class SliceInfo {
+  public:
+    typedef _bz_ArrayExprConstant<T_numtype> T_slice;
+};
+
+    template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+        typename T7, typename T8, typename T9, typename T10, typename T11>
+    typename SliceInfo<T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11>::T_slice
+    operator()(T1 r1, T2 r2, T3 r3, T4 r4, T5 r5, T6 r6, T7 r7, T8 r8, T9 r9, T10 r10, T11 r11) const
+    {
+      return *this;
+    }
 
 protected:
     _bz_ArrayExprConstant() { }
