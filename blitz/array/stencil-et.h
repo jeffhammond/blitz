@@ -58,7 +58,7 @@ Range _bz_makeRange(const T& r)
   return Range(r);
 }
 
-nilArraySection _bz_makeRange(const nilArraySection& r)
+inline nilArraySection _bz_makeRange(const nilArraySection& r)
 {
   return r;
 }
