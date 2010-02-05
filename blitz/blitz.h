@@ -93,7 +93,7 @@ BZ_NAMESPACE(blitz)
 // Used for dimensional indexes (not implemented yet).
 #ifdef FULLY64BIT
 #warning 64-bit array dimensions not yet implemented
-typedef size_t indexType; 
+typedef ptrdiff_t indexType; 
 #else
 typedef int indexType; 
 #endif
