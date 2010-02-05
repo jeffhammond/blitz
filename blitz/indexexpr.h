@@ -119,12 +119,12 @@ public:
         return T_numtype();
     }
 
-    ptrdiff_t suggestStride(int) const {
+    diffType suggestStride(int) const {
         BZPRECONDITION(0);
         return 0;
     }
 
-    bool isStride(int,ptrdiff_t) const {
+    bool isStride(int,diffType) const {
         BZPRECONDITION(0);
         return true;
     }

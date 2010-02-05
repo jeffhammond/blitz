@@ -85,7 +85,7 @@ public:
         stride_ = 1;
     }
 
-    Range(T_numtype first, T_numtype last, ptrdiff_t stride=1)
+    Range(T_numtype first, T_numtype last, diffType stride=1)
         : first_(first), last_(last), stride_(stride)
     { 
         BZPRECHECK((first == fromStart) || (last == toEnd) ||
@@ -119,7 +119,7 @@ public:
         return (last_ - first_) / stride_ + 1;
     }
 
-    ptrdiff_t stride() const
+    diffType stride() const
     { return stride_; }
 
     bool isAscendingContiguous() const
@@ -127,7 +127,7 @@ public:
         return (((first_ < last_) && (stride_ == 1)) || (first_ == last_));
     }
 
-    void setRange(T_numtype first, T_numtype last, ptrdiff_t stride=1)
+    void setRange(T_numtype first, T_numtype last, diffType stride=1)
     {
         BZPRECONDITION(((first < last) && (stride > 0)) ||
             ((first > last) && (stride < 0)) ||
@@ -204,7 +204,7 @@ public:
 
 private:
   T_numtype first_, last_;
-  ptrdiff_t stride_;
+  diffType stride_;
 };
 
 BZ_NAMESPACE_END

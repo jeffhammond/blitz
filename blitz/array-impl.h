@@ -326,7 +326,7 @@ public:
      */
     Array(T_numtype* restrict dataFirst, TinyVector<int, N_rank> shape,
         GeneralArrayStorage<N_rank> storage = GeneralArrayStorage<N_rank>())
-      : MemoryBlockReference<T_numtype>(_bz_returntype<size_t>::product(shape), dataFirst, 
+      : MemoryBlockReference<T_numtype>(_bz_returntype<sizeType>::product(shape), dataFirst, 
           neverDeleteData),
         storage_(storage)
     {
@@ -343,9 +343,9 @@ public:
      * block will not be freed by Blitz++).
      */
     Array(T_numtype* restrict dataFirst, TinyVector<int, N_rank> shape,
-        TinyVector<ptrdiff_t, N_rank> stride, 
+        TinyVector<diffType, N_rank> stride, 
         GeneralArrayStorage<N_rank> storage = GeneralArrayStorage<N_rank>())
-      : MemoryBlockReference<T_numtype>(_bz_returntype<size_t>::product(shape), dataFirst, 
+      : MemoryBlockReference<T_numtype>(_bz_returntype<sizeType>::product(shape), dataFirst, 
           neverDeleteData),
         storage_(storage)
     {
@@ -363,7 +363,7 @@ public:
     Array(T_numtype* restrict dataFirst, TinyVector<int, N_rank> shape,
         preexistingMemoryPolicy deletionPolicy,
         GeneralArrayStorage<N_rank> storage = GeneralArrayStorage<N_rank>())
-      : MemoryBlockReference<T_numtype>(_bz_returntype<size_t>::product(shape), dataFirst, 
+      : MemoryBlockReference<T_numtype>(_bz_returntype<sizeType>::product(shape), dataFirst, 
             deletionPolicy),
         storage_(storage)
     {
@@ -382,10 +382,10 @@ public:
      * given set of strides.  
      */
     Array(T_numtype* restrict dataFirst, TinyVector<int, N_rank> shape,
-        TinyVector<ptrdiff_t, N_rank> stride,
+        TinyVector<diffType, N_rank> stride,
         preexistingMemoryPolicy deletionPolicy,
         GeneralArrayStorage<N_rank> storage = GeneralArrayStorage<N_rank>())
-      : MemoryBlockReference<T_numtype>(_bz_returntype<size_t>::product(shape), dataFirst, 
+      : MemoryBlockReference<T_numtype>(_bz_returntype<sizeType>::product(shape), dataFirst, 
           deletionPolicy),
         storage_(storage)
     {
@@ -865,7 +865,7 @@ public:
     // element in the array (but note that it may not be
     // stored first in memory if some ranks are stored descending).
 
-    ptrdiff_t                               dataOffset() const
+    diffType                               dataOffset() const
   { return dot(storage_.base(), stride_); }
 
     const T_numtype* restrict         data() const
@@ -886,9 +886,9 @@ public:
     // These dataFirst() routines refer to the element in the
     // array which falls first in memory.
 
-    ptrdiff_t                               dataFirstOffset() const
+    diffType                               dataFirstOffset() const
     {
-      ptrdiff_t pos = 0;
+      diffType pos = 0;
 
         // Used to use tinyvector expressions:
         // return data_ + dot(storage_.base()
@@ -961,8 +961,8 @@ public:
 
     void                              makeUnique();
 
-    size_t                               numElements() const 
-    { return _bz_returntype<size_t>::product(length_); }
+    sizeType                               numElements() const 
+    { return _bz_returntype<sizeType>::product(length_); }
 
     // NEEDS_WORK -- Expose the numReferences() method
     // MemoryBlockReference<T_numtype>::numReferences;
@@ -1111,13 +1111,13 @@ public:
     const TinyVector<int, N_rank>&    shape() const
     { return length_; }
 
-    size_t                               size() const
+    sizeType                               size() const
     { return numElements(); }
 
-    const TinyVector<ptrdiff_t, N_rank>&    stride() const
+    const TinyVector<diffType, N_rank>&    stride() const
     { return stride_; }
 
-  ptrdiff_t                               stride(int rank) const
+  diffType                               stride(int rank) const
     { return stride_[rank]; }
 
     bool                              threadLocal(bool disableLock = true) const
@@ -2427,8 +2427,8 @@ protected:
      */
     GeneralArrayStorage<N_rank> storage_;
     TinyVector<int, N_rank> length_;
-    TinyVector<ptrdiff_t, N_rank> stride_;
-    ptrdiff_t zeroOffset_;
+    TinyVector<diffType, N_rank> stride_;
+    diffType zeroOffset_;
 };
 
 /*

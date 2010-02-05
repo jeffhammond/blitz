@@ -142,13 +142,13 @@ public:
     T_numtype operator[](int i)
   { return data_[i * stride_]; }
 
-    T_numtype fastRead(size_t i)
+    T_numtype fastRead(sizeType i)
     { return data_[i]; }
 
     int suggestStride(int rank) const
     { return array_.stride(rank); }
 
-    bool isStride(int rank, ptrdiff_t stride) const
+    bool isStride(int rank, diffType stride) const
     { return array_.stride(rank) == stride; }
 
     void push(int position)
@@ -306,7 +306,7 @@ private:
     const T_numtype * restrict          data_;
     const T_array&                          array_;
     ConstPointerStack<T_numtype,N_rank>     stack_;
-  ptrdiff_t                                     stride_;
+  diffType                                     stride_;
 };
 
 BZ_NAMESPACE_END
