@@ -34,26 +34,37 @@
 
 BZ_NAMESPACE(blitz)
 
-// W is the 
 template<int N, int I, typename T_numtype> 
 class _bz_meta_vecAssign {
 public:
-  static const int vecwidth=16/sizeof(T_numtype);
-  static const int blocksize = N-I>=vecwidth ? vecwidth : 1;
+    // Calculate the SIMD vector width in T_numtype units.
+    static const int vecwidth=
+      BZ_SIMD_WIDTH>sizeof(T_numtype) ? BZ_SIMD_WIDTH/sizeof(T_numtype) : 1;
+    static const int blocksize = N-I>=vecwidth ? vecwidth : 1;
     static const int fastLoopFlag = (I < N-blocksize) ? 1 : 0;
     static const int loopFlag = (I < N-1) ? 1 : 0;
 
     template<typename T_expr, typename T_updater>
-    static inline void fastAssign(T_numtype* restrict data, T_expr expr, T_updater u)
+    static inline void fastAssign(T_numtype* restrict data, T_expr expr, 
+				  T_updater u)
     {
+      // This metaprogram used to unroll the loops completely, but
+      // this inhibits vector optimizations on icpc. If a SIMD width
+      // is set, we therefore make a loop of the appropriate width to
+      // facilitate vectorization. If BZ_SIMD_WIDTH==1, which is the
+      // default, it will still unroll completely.
+
+      // These pragmas are for icpc. Ideally this should be
+      // compiler-independent, but currently icpc is the only compiler
+      // for which they are used.
       #pragma ivdep
       #pragma vector aligned
       for(int i=I;i<I+blocksize;++i)
 	u.update(data[i], expr._bz_fastAccess(i));
-      // by using data and not the [] operator here, do we lose index check?
 
-      _bz_meta_vecAssign<N * fastLoopFlag, (I+blocksize) * fastLoopFlag, T_numtype>
-	::fastAssign(data,expr,u);
+      _bz_meta_vecAssign<N * fastLoopFlag,
+			 (I+blocksize) * fastLoopFlag, 
+			 T_numtype>::fastAssign(data,expr,u);
     }
 
     template<typename T_vector, typename T_expr, typename T_updater>

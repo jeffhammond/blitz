@@ -423,7 +423,7 @@ public:
     { return dataFirst(); }
 
 private:
-    BZ_ALIGN_VARIABLE(T_numtype, data_[N_length], 16)
+    BZ_ALIGN_VARIABLE(T_numtype, data_[N_length], BZ_SIMD_WIDTH)
 };
 
 // Specialization for N = 0: KCC is giving some
