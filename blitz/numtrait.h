@@ -84,8 +84,9 @@ BZDECLNUMTRAIT(int, long, int, float, int);
 BZDECLNUMTRAIT(unsigned int, unsigned long, int, float, long);
 BZDECLNUMTRAIT(long, long, long, double, long);
 BZDECLNUMTRAIT(unsigned long, unsigned long, long, double, long);
-BZDECLNUMTRAIT(float, double, float, float, float);
-//BZDECLNUMTRAIT(float, float, float, float, float);
+// sums of floats are no longer automatically promoted to double. user
+// must do this explicitly if it is important.
+BZDECLNUMTRAIT(float, float, float, float, float);
 BZDECLNUMTRAIT(double, double, double, double, double);
 
 #ifdef BZ_HAVE_COMPLEX
