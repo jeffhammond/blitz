@@ -1,0 +1,28 @@
+sudo: false
+language: cpp
+os:
+  - osx
+  - linux
+compiler:
+  - clang
+  - gcc
+#matrix:
+#  exclude:
+#  allow_failures:
+#env:
+before_install:
+  - pwd
+install:
+  - env
+script:
+  - ./autogen.sh
+  - ./configure --prefix=/tmp/blitz
+  - make
+  - make lib
+  - make check-testsuite
+  - make check-examples
+  - make check-benchmarks
+  - make install
+  - rm -rf /tmp/blitz
+after_failure:
+  - cat ./config.log
