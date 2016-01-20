@@ -1,10 +1,10 @@
 sudo: false
 language: cpp
 os:
-  - osx
+#  - osx
   - linux
 compiler:
-  - clang
+#  - clang
   - gcc
 #matrix:
 #  exclude:
