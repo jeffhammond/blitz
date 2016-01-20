@@ -34,15 +34,26 @@
 #define BZCONFIG_H
 
 #if defined(__APPLE__)
-#if defined(__GNUC__)
+
+#if defined(__INTEL_COMPILER)
+/* Intel icc compiler */
+#include <blitz/intel/bzconfig.h>
+#elif defined(__clang__)
+/* Clang compiler */
+#include <blitz/clang/bzconfig.h>
+#elif defined(__GNUC__)
 /* GNU gcc compiler for newer Mac OS X Darwin */
 #include <blitz/gnu/bzconfig.h>
-#else
+#elif defined(__xlC__) || defined(__IBMCPP__)
 /* IBM xlc compiler for Darwin */
 #include <blitz/apple/bzconfig.h>
+#else
+#error Unknown compiler on Apple
 #endif
 
-#elif defined(__INTEL_COMPILER)
+#elif defined(__linux__)
+
+#if defined(__INTEL_COMPILER)
 /* Intel icc compiler */
 #include <blitz/intel/bzconfig.h>
 
@@ -94,6 +105,10 @@
 
 #else
 #error Unknown compiler
+#endif
+
+#else
+#error Unknown operating system
 #endif
 
 #endif /* BZCONFIG_H */
